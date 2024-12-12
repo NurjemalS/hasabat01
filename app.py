@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import squarify
 import seaborn as sns
-from hunar_ugurlar_app import main as humarmen_main
 # from squarify import normalize_sizes, squarify
 
 # import numpy as np
