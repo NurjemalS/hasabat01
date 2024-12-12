@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-# import squarify
+import squarify
 import seaborn as sns
+from hunar_ugurlar_app import main as humarmen_main
+# from squarify import normalize_sizes, squarify
+
 # import numpy as np
 
 
@@ -173,6 +176,23 @@ if page == "Hünärler":
 
     # Display the heatmap
     st.pyplot(fig)
+
+
+    st.subheader("Correlation Heatmap")
+    corr_data = filtered_df[['Talyp sany']].copy()
+    corr_data['Year'] = filtered_df['Year'].astype(str).str[:4].astype(int)  # Convert 'Year' to numeric start year
+    correlation = corr_data.corr()
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(correlation, annot=True, cmap='coolwarm', ax=ax)
+    ax.set_title("Correlation Matrix")
+    st.pyplot(fig)
+
+if page == "Hümarmen ugurlar":
+    st.title("Hümarmen ugurlar seljermesi")
+    humarmen_main()  # Call the main function from humarmen_ugurlar.py
+
+
 
 
 
