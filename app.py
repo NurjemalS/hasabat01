@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pydeck as pdk
+import numpy as np
+from sklearn.linear_model import LinearRegression
 
 # from squarify import normalize_sizes, squarify
 
@@ -38,6 +40,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+plt.rcParams["font.family"] = "Times New Roman"
 
 st.sidebar.title("Nawigasiýa")
 
@@ -971,9 +974,186 @@ if page == "Hyzmatdaşlyklar":
     st.header("Top Partner Countries and Universities")
     plot_top_partners(filtered_data, university_map)
 
+if page == "Alymlyk derejeler":
+    st.title("Ýokary hünär bilim edaralarynda işleýän alymlyk derejeli we alymlyk atly işgärleriniň sany barada maglumat")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+
+    # Load Data
+    long_df = pd.read_csv('Alymlyk_derejeler_restructured_data.csv')
+    long_df.fillna(0, inplace=True)
+
+    # Ensure Year is an integer
+    long_df["Year"] = long_df["Year"].astype(str)
+
+    # Sidebar Filters
+    universities = sorted(long_df['University'].unique())
+    universities.insert(0, "Ählisi")  # Add "ALL" option at the beginning
+
+    selected_universities = st.multiselect("Uniwersitet saýlaň", universities, default="Ählisi")
+    selected_types = st.multiselect("Dereje saýlaň", sorted(long_df['Type'].unique()), default=long_df['Type'].unique())
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Filter Data
+    if "Ählisi" in selected_universities:
+        filtered_df = long_df[long_df['Type'].isin(selected_types)]
+    else:
+        filtered_df = long_df[(long_df['University'].isin(selected_universities)) & (long_df['Type'].isin(selected_types))]
+
+    # Line Chart for Historical Data
+    st.write("###  Alymlyk derejeleriniň ýyllar boýy tendensiýalary")
+    if not filtered_df.empty:
+        line_chart_data = filtered_df.pivot_table(index='Year', columns='Type', values='Count', aggfunc='sum').fillna(0)
+        st.line_chart(line_chart_data)
+    else:
+        st.write("Saýlananlar üçin maglumat ýok.")
+
+    # Forecast Button
+    if st.button("2030-njy ýyla çenli çaklama"):
+        st.write("### Alymlyk derejeleriniň çaklama tendensiýalary (2025–2030)")
+
+        # Prepare data for each type and forecast separately
+        forecast_results = []
+        combined_data = []
+
+        for faculty_type in selected_types:
+            type_data = filtered_df[filtered_df['Type'] == faculty_type]
+            regression_data = type_data.groupby('Year')['Count'].sum().reset_index()
+
+            # Prepare data for regression
+            X = regression_data['Year'].values.reshape(-1, 1)
+            y = regression_data['Count'].values
+
+            if len(X) > 1:  # Ensure there is enough data for regression
+                # Fit Linear Regression
+                model = LinearRegression()
+                model.fit(X, y)
+
+                # Forecast future years
+                future_years = np.arange(2025, 2031).reshape(-1, 1)
+                future_counts = model.predict(future_years)
+
+                # Create forecast DataFrame
+                forecast_df = pd.DataFrame({
+                    'Year': future_years.flatten(),
+                    'Count': future_counts,
+                    'Type': faculty_type
+                })
+
+                # Combine historical and forecasted data
+                combined_df = pd.concat([regression_data.assign(Type=faculty_type), forecast_df], ignore_index=True)
+                combined_data.append(combined_df)
+
+        # Combine all types into one DataFrame
+        final_combined_df = pd.concat(combined_data, ignore_index=True)
+        final_combined_df['Year'] = final_combined_df['Year'].astype(str)  # Convert Year to string for chart
+
+        # Pivot for chart
+        forecast_chart_data = final_combined_df.pivot_table(index='Year', columns='Type', values='Count', aggfunc='sum').fillna(0)
+
+        # Display updated line chart
+        st.write("### Ähli görnüşler üçin birleşdirilen taryhy we çak edilýän maglumatlar")
+        st.line_chart(forecast_chart_data)
+
+        # Visualize Linear Fit for Each Type
+        st.write("### Linear Fit Visualization for All Types")
+        plt.figure(figsize=(12, 8))
+
+        for faculty_type in selected_types:
+            type_data = final_combined_df[final_combined_df['Type'] == faculty_type]
+            historical_data = type_data[type_data['Year'].astype(int) <= 2024]
+            future_data = type_data[type_data['Year'].astype(int) > 2024]
+
+            # Plot historical data
+            plt.scatter(historical_data['Year'], historical_data['Count'], label=f"{faculty_type} (taryhy)")
+
+            # Plot forecasted data
+            plt.plot(future_data['Year'], future_data['Count'], label=f"{faculty_type} (çaklama)")
+
+        plt.xlabel("Ýyl")
+        plt.ylabel("Sany")
+        plt.title(" Alymlyk derejeleriniň görnüşleri üçin çyzykly laýyklyk")
+        plt.legend()
+        plt.xticks(rotation=45)
+        st.pyplot(plt)
+
+    st.write("### Alymlyk derejeleriň ýyl we görnüşi boýunça hasaplamalar")
+    bar_chart_data = filtered_df.groupby(['Year', 'Type'])['Count'].sum().unstack(fill_value=0)
+    st.bar_chart(bar_chart_data)
+
+    st.write("### Wagtyň geçmegi bilen alymlyk derejeleriniň ýylylyk kartasy")
+    heatmap_data = filtered_df.pivot_table(index='Year', columns='Type', values='Count', aggfunc='sum', fill_value=0)
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(heatmap_data, annot=True, fmt=".1f", cmap="YlGnBu")
+    plt.title("alymlyk derejeleriniň ýylylyk kartasy")
+    plt.xlabel("alymlyk derejesiniň görnüşi")
+    plt.ylabel("Ýyl")
+    st.pyplot(plt)
+
+
+    col1, col2, col3 = st.columns(3)
+
+            # Add content to each column
+    with col2:
+        st.write("### Alymlyk derejeleriniň göterim paýy")
+
+        # Calculate total counts for each type
+        specific_types = ['professor', 'dosent', 'ylymlaryň kandidaty', 'ylymlaryň doktory']
+        distribution_data = filtered_df[filtered_df['Type'].isin(specific_types)]
+        distribution_summary = distribution_data.groupby('Type')['Count'].sum()
+
+        # Calculate overall faculty count
+        overall_faculty_count = filtered_df[
+            filtered_df['Type'] == 'Alymlyk derejeli we alymlyk atly işgärleriň jemi sany'
+        ]['Count'].sum()
+
+        # Calculate percentage distribution
+        distribution_percentages = (distribution_summary / overall_faculty_count) * 100
+
+        # Plot pie chart
+        plt.figure(figsize=(18, 8))
+        plt.pie(distribution_percentages, labels=distribution_percentages.index, autopct='%1.1f%%', startangle=140, colors=["#f59393" , "#87cefa", "#f2f277", "#90ee90"], textprops={"fontsize": 20})
+        # plt.title("Percentage Distribution of Faculty Types")
+        st.pyplot(plt)
 
 
 
+
+    st.write("### Faculty Distribution by University")
+
+    # Filter data for specific types
+    specific_types = ['professor', 'dosent', 'ylymlaryň kandidaty', 'ylymlaryň doktory']
+    filtered_specific_types = filtered_df[filtered_df['Type'].isin(specific_types)]
+
+    # Group data by University and Type
+    university_type_data = filtered_specific_types.groupby(['University', 'Type'])['Count'].sum().unstack(fill_value=0)
+
+    # Plot grouped bar chart
+    university_type_data.plot(kind='bar', figsize=(12, 8))
+    plt.title("Faculty Distribution by University")
+    plt.xlabel("University")
+    plt.ylabel("Faculty Count")
+    plt.xticks(rotation=45)
+    plt.legend(title="Faculty Type")
+    st.pyplot(plt)
+
+    st.write("### Uniwersitetleriň her alymlyk derejesi boýunça göterim goşandy")
+
+    # Filter data for specific types
+    specific_types = ['professor', 'dosent', 'ylymlaryň kandidaty', 'ylymlaryň doktory']
+    filtered_specific_types = filtered_df[filtered_df['Type'].isin(specific_types)]
+
+    # Group data by University and Type
+    university_type_data = filtered_specific_types.groupby(['University', 'Type'])['Count'].sum().unstack(fill_value=0)
+
+    # Calculate percentage contribution
+    percentage_contribution = university_type_data.div(university_type_data.sum(axis=0), axis=1) * 100
+
+    # Use Streamlit's bar chart to visualize
+    st.bar_chart(percentage_contribution)
 
 
 
