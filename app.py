@@ -1032,9 +1032,13 @@ if page == "Alymlyk derejeler":
                 model = LinearRegression()
                 model.fit(X, y)
 
+                m = model.coef_[0]
+                b = model.intercept_
+
                 # Forecast future years
                 future_years = np.arange(2025, 2031).reshape(-1, 1)
                 future_counts = model.predict(future_years)
+                # st.write(f"### Forecasting Formula: Faculty Count = {m:.2f} × Year + {b:.2f}")
 
                 # Create forecast DataFrame
                 forecast_df = pd.DataFrame({
@@ -1122,7 +1126,7 @@ if page == "Alymlyk derejeler":
 
 
 
-    st.write("### Faculty Distribution by University")
+    st.write("### Uniwersitet ara alymlyk derejeleriniň paýlanyşy")
 
     # Filter data for specific types
     specific_types = ['professor', 'dosent', 'ylymlaryň kandidaty', 'ylymlaryň doktory']
@@ -1133,11 +1137,11 @@ if page == "Alymlyk derejeler":
 
     # Plot grouped bar chart
     university_type_data.plot(kind='bar', figsize=(12, 8))
-    plt.title("Faculty Distribution by University")
-    plt.xlabel("University")
-    plt.ylabel("Faculty Count")
+    plt.title("Uniwersitet boýunça alymlyk derejeleriniň paýlanyşy")
+    plt.xlabel("Uniwersitet")
+    plt.ylabel("Alymlyk derejeleriniň sany")
     plt.xticks(rotation=45)
-    plt.legend(title="Faculty Type")
+    plt.legend(title="Alymlyk derejeleriniň görnüşi")
     st.pyplot(plt)
 
     st.write("### Uniwersitetleriň her alymlyk derejesi boýunça göterim goşandy")
