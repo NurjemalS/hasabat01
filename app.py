@@ -53,7 +53,7 @@ page = st.sidebar.radio("Kategoriýa saýlaň", [
     "Alymlyk derejeler",
     "Halkara indedeksli zurnallar",
     "Maddy enjamlaýyn üpjünçilik",
-    "Şahamçalar",
+    # "Şahamçalar",
     "Hyzmatdaşlyklar"
 ])
 
@@ -412,7 +412,9 @@ if page == "Hyzmatdaşlyklar":
             {"code": "R9", "name": "Braşow şäherindaki Transilwaniýa uniwersiteti"},
             {"code": "R10", "name": "Buharestiň ykdysady bilimler uniwersiteti"},
             {"code": "R11", "name": "Buharestiň ykdysady bilimler uniwersiteti"},
-            {"code": "R12", "name": "Buharestiň milli bedenterbiýe we sport uniwersiteti"}
+            {"code": "R12", "name": "Buharestiň milli bedenterbiýe we sport uniwersiteti"},
+            {"code": "R13", "name": "Romania unknown13 university"},
+            {"code": "R14", "name": "Romania unknown14 university"}
         ],
         "AZE": [
             {"code": "AZ1", "name": "Azerbaýjan Respublikasynyň Daşary işler ministrliginiň ýanyndaky “ADA” uniwersiteti"},
@@ -501,7 +503,10 @@ if page == "Hyzmatdaşlyklar":
             {"code": "B11", "name": "Fransisk Skorina adyndaky Gomel döwlet uniwersiteti"},
             {"code": "B12", "name": "Brest döwlet tehniki uniwersiteti"},
             {"code": "B13", "name": "P.O. Suhoý adyndaky Gomel döwlet tehniki uniwersiteti"},
-            {"code": "B14", "name": "Belorus döwlet uniwersiteti"}
+            {"code": "B14", "name": "Belorus döwlet uniwersiteti"},
+            {"code": "B15", "name": "Belorus unknown15 uniwersiteti"},
+            {"code": "B16", "name": "Belorus unknown16 uniwersiteti"}
+
         ],
         "DEU": [
             {"code": "D1", "name": "Swikau Günbatarsakson ýokary okuw mekdebi – Amaly ylymlar uniwersiteti"},
@@ -541,10 +546,10 @@ if page == "Hyzmatdaşlyklar":
             {"code": "UK3", "name": "Ukrainanyň Daşary işler ministrliginiň ýanyndaky G.Udowenko adyndaky Diplomatik akademiýasy"}
         ],
         "ARM": [
-            {"code": "AR1", "name": "Ermenistanyň Milli agrar uniwersiteti"},
-            {"code": "AR2", "name": "Ermenistan Respublikasynyň Daşary işler ministrliginiň Diplomatik mekdebi"},
-            {"code": "AR3", "name": "Ermenistanyň Döwlet bedenterbiýe instituty"},
-            {"code": "AR4", "name": "Ýerewan döwlet uniwersiteti"}
+            {"code": "ARM1", "name": "Ermenistanyň Milli agrar uniwersiteti"},
+            {"code": "ARM2", "name": "Ermenistan Respublikasynyň Daşary işler ministrliginiň Diplomatik mekdebi"},
+            {"code": "ARM3", "name": "Ermenistanyň Döwlet bedenterbiýe instituty"},
+            {"code": "ARM4", "name": "Ýerewan döwlet uniwersiteti"}
         ],
         "CRO": [
             {"code": "HR1", "name": "Horwatiýa Respublikasynyň Daşary işler we Ýewropa integrasiýasy ministrliginiň Diplomatik akademiýasy"}
@@ -606,10 +611,10 @@ if page == "Hyzmatdaşlyklar":
         data["Partner University Name"] = data.apply(get_university_name, axis=1)
         return data
 
-    st.title("University Partnership Analysis")
+    st.title("Ýokary okuw mekdepleriniň hyzmatdaşlyk edýän daşary ýurtlarynyň hem-de olaryň ýokary okuw mekdepleriniň sany barada maglumat")
 
     # Load data
-    data = pd.read_csv("HALKARA_HYZ_data.csv")
+    data = pd.read_csv("HALKARA_HYZ_data_1.csv")
 
     map_university_names(data, university_map)
     # st.dataframe(data)
@@ -1110,8 +1115,8 @@ if page == "Alymlyk derejeler":
         distribution_summary = distribution_data.groupby('Type')['Count'].sum()
 
         # Calculate overall faculty count
-        overall_faculty_count = filtered_df[
-            filtered_df['Type'] == 'Alymlyk derejeli we alymlyk atly işgärleriň jemi sany'
+        overall_faculty_count = long_df[
+            long_df['Type'] == 'Alymlyk derejeli we alymlyk atly işgärleriň jemi sany'
         ]['Count'].sum()
 
         # Calculate percentage distribution
@@ -1159,7 +1164,373 @@ if page == "Alymlyk derejeler":
     # Use Streamlit's bar chart to visualize
     st.bar_chart(percentage_contribution)
 
+if page == "Halkara indedeksli zurnallar":
+    st.title("Ýokary okuw mekdepleriniň Daşary ýurt neşirlerinde çap edilen hem-de çap edilmegi meýilleşdirilýän ylmy makalalarynyň sany barada maglumat")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
+     # Load Data
+    long_df = pd.read_csv('makalalar_restructured_data.csv')
+    long_df.fillna(0, inplace=True)
+
+    # Ensure Year is an integer
+    long_df["Year"] = long_df["Year"].astype(str)
+
+    # Sidebar Filters
+    universities = sorted(long_df['University'].unique())
+    universities.insert(0, "Ählisi")  # Add "ALL" option at the beginning
+
+    selected_universities = st.multiselect("Uniwersitet saýlaň", universities, default="Ählisi")
+    selected_types = st.multiselect("Makala görnüşi saýlaň", sorted(long_df['Type'].unique()), default=long_df['Type'].unique())
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Filter Data
+    if "Ählisi" in selected_universities:
+        filtered_df = long_df[long_df['Type'].isin(selected_types)]
+    else:
+        filtered_df = long_df[(long_df['University'].isin(selected_universities)) & (long_df['Type'].isin(selected_types))]
+
+    # Line Chart for Historical Data
+    st.write("### Halkara indedeksli makalalaryň ýyllar boýy tendensiýalary")
+    if not filtered_df.empty:
+        line_chart_data = filtered_df.pivot_table(index='Year', columns='Type', values='Count', aggfunc='sum').fillna(0)
+        st.line_chart(line_chart_data)
+    else:
+        st.write("Saýlananlar üçin maglumat ýok.")
+
+    # Forecast Button
+    if st.button("2030-njy ýyla çenli çaklama"):
+        st.write("### Halkara indedeksli makalalaryň çaklama tendensiýalary (2025–2030)")
+
+        # Prepare data for each type and forecast separately
+        forecast_results = []
+        combined_data = []
+
+        for faculty_type in selected_types:
+            type_data = filtered_df[filtered_df['Type'] == faculty_type]
+            regression_data = type_data.groupby('Year')['Count'].sum().reset_index()
+
+            # Prepare data for regression
+            X = regression_data['Year'].values.reshape(-1, 1)
+            y = regression_data['Count'].values
+
+            if len(X) > 1:  # Ensure there is enough data for regression
+                # Fit Linear Regression
+                model = LinearRegression()
+                model.fit(X, y)
+
+                m = model.coef_[0]
+                b = model.intercept_
+
+                # Forecast future years
+                future_years = np.arange(2025, 2031).reshape(-1, 1)
+                future_counts = model.predict(future_years)
+                # st.write(f"### Forecasting Formula: Faculty Count = {m:.2f} × Year + {b:.2f}")
+
+                # Create forecast DataFrame
+                forecast_df = pd.DataFrame({
+                    'Year': future_years.flatten(),
+                    'Count': future_counts,
+                    'Type': faculty_type
+                })
+
+                # Combine historical and forecasted data
+                combined_df = pd.concat([regression_data.assign(Type=faculty_type), forecast_df], ignore_index=True)
+                combined_data.append(combined_df)
+
+        # Combine all types into one DataFrame
+        final_combined_df = pd.concat(combined_data, ignore_index=True)
+        final_combined_df['Year'] = final_combined_df['Year'].astype(str)  # Convert Year to string for chart
+
+        # Pivot for chart
+        forecast_chart_data = final_combined_df.pivot_table(index='Year', columns='Type', values='Count', aggfunc='sum').fillna(0)
+
+        # Display updated line chart
+        st.write("### Ähli görnüşler üçin birleşdirilen taryhy we çak edilýän maglumatlar")
+        st.line_chart(forecast_chart_data)
+
+        # Visualize Linear Fit for Each Type
+        st.write("### Linear Fit Visualization for All Types")
+        plt.figure(figsize=(12, 8))
+
+        for faculty_type in selected_types:
+            type_data = final_combined_df[final_combined_df['Type'] == faculty_type]
+            historical_data = type_data[type_data['Year'].astype(int) <= 2024]
+            future_data = type_data[type_data['Year'].astype(int) > 2024]
+
+            # Plot historical data
+            plt.scatter(historical_data['Year'], historical_data['Count'], label=f"{faculty_type} (taryhy)")
+
+            # Plot forecasted data
+            plt.plot(future_data['Year'], future_data['Count'], label=f"{faculty_type} (çaklama)")
+
+        plt.xlabel("Ýyl")
+        plt.ylabel("Sany")
+        plt.title("Halkara indedeksli makalalaryň görnüşleri üçin çyzykly laýyklyk")
+        plt.legend()
+        plt.xticks(rotation=45)
+        st.pyplot(plt)
+
+    st.write("### Halkara indedeksli makalalryň ýyl we görnüşi boýunça hasaplamalar")
+    bar_chart_data = filtered_df.groupby(['Year', 'Type'])['Count'].sum().unstack(fill_value=0)
+    st.bar_chart(bar_chart_data)
+
+    st.write("### Wagtyň geçmegi bilen halkara indedeksli makalalaryň ýylylyk kartasy")
+    heatmap_data = filtered_df.pivot_table(index='Year', columns='Type', values='Count', aggfunc='sum', fill_value=0)
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(heatmap_data, annot=True, fmt=".1f", cmap="YlGnBu")
+    plt.title("Halkara indedeksli makalalaryň ýylylyk kartasy")
+    plt.xlabel("Halkara indedeksli makalalaryň görnüşi")
+    plt.ylabel("Ýyl")
+    st.pyplot(plt)
+
+
+    col1, col2, col3 = st.columns(3)
+
+            # Add content to each column
+    with col2:
+        st.write("### Halkara indedeksli makalalaryň göterim paýy")
+
+        # Calculate total counts for each type
+        specific_types = ['Elibrary.ru', 'РИНЦ', 'Web of Science ýa-da Scopus']
+        distribution_data = filtered_df[filtered_df['Type'].isin(specific_types)]
+        distribution_summary = distribution_data.groupby('Type')['Count'].sum()
+
+        # Calculate overall faculty count
+        overall_faculty_count = long_df[
+            long_df['Type'] == 'Jemi'
+        ]['Count'].sum()
+
+        # Calculate percentage distribution
+        distribution_percentages = (distribution_summary / overall_faculty_count) * 100
+
+        # Plot pie chart
+        plt.figure(figsize=(18, 8))
+        plt.pie(distribution_percentages, labels=distribution_percentages.index, autopct='%1.1f%%', startangle=140, colors=["#f59393" , "#87cefa", "#f2f277"], textprops={"fontsize": 20})
+        # plt.title("Percentage Distribution of Faculty Types")
+        st.pyplot(plt)
+
+
+
+
+    st.write("### Uniwersitet ara halkara indedeksli makalalaryň paýlanyşy")
+
+    # Filter data for specific types
+    specific_types = ['Elibrary.ru', 'РИНЦ', 'Web of Science ýa-da Scopus']
+    filtered_specific_types = filtered_df[filtered_df['Type'].isin(specific_types)]
+
+    # Group data by University and Type
+    university_type_data = filtered_specific_types.groupby(['University', 'Type'])['Count'].sum().unstack(fill_value=0)
+
+    # Plot grouped bar chart
+    university_type_data.plot(kind='bar', figsize=(12, 8))
+    plt.title("Uniwersitet boýunça halkara indedeksli makalalaryň paýlanyşy")
+    plt.xlabel("Uniwersitet")
+    plt.ylabel("Halkara indedeksli makalalaryň sany")
+    plt.xticks(rotation=45)
+    plt.legend(title="Halkara indedeksli makalalaryň görnüşi")
+    st.pyplot(plt)
+
+    st.write("### Uniwersitetleriň her halkara indedeksli makalalar boýunça göterim goşandy")
+
+    # Filter data for specific types
+    specific_types = ['Elibrary.ru', 'РИНЦ', 'Web of Science ýa-da Scopus']
+    filtered_specific_types = filtered_df[filtered_df['Type'].isin(specific_types)]
+
+    # Group data by University and Type
+    university_type_data = filtered_specific_types.groupby(['University', 'Type'])['Count'].sum().unstack(fill_value=0)
+
+    # Calculate percentage contribution
+    percentage_contribution = university_type_data.div(university_type_data.sum(axis=0), axis=1) * 100
+
+    # Use Streamlit's bar chart to visualize
+    st.bar_chart(percentage_contribution)
+
+if page ==  "Maddy enjamlaýyn üpjünçilik":
+    st.title("Ýokary okuw mekdepleriniň Maddy-enjamlaýyn binýady barada maglumat")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+     # Load Data
+    long_df = pd.read_csv('maddy_restructured_data.csv')
+    long_df.fillna(0, inplace=True)
+
+    # Ensure Year is an integer
+    long_df["Year"] = long_df["Year"].astype(str)
+
+    # Sidebar Filters
+    universities = sorted(long_df['University'].unique())
+    universities.insert(0, "Ählisi")  # Add "ALL" option at the beginning
+
+    selected_universities = st.multiselect("Uniwersitet saýlaň", universities, default="Ählisi")
+    selected_types = st.multiselect("Enjam görnüşi saýlaň", sorted(long_df['Type'].unique()), default=long_df['Type'].unique())
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Filter Data
+    if "Ählisi" in selected_universities:
+        filtered_df = long_df[long_df['Type'].isin(selected_types)]
+    else:
+        filtered_df = long_df[(long_df['University'].isin(selected_universities)) & (long_df['Type'].isin(selected_types))]
+
+    # Line Chart for Historical Data
+    st.write("### Enjamlaryň ýyllar boýy tendensiýalary")
+    if not filtered_df.empty:
+        line_chart_data = filtered_df.pivot_table(index='Year', columns='Type', values='Count', aggfunc='sum').fillna(0)
+        st.line_chart(line_chart_data)
+    else:
+        st.write("Saýlananlar üçin maglumat ýok.")
+
+    # Forecast Button
+    if st.button("2030-njy ýyla çenli çaklama"):
+        st.write("### Enjamlaryňçaklama tendensiýalary (2029–2030)")
+
+        # Prepare data for each type and forecast separately
+        forecast_results = []
+        combined_data = []
+
+        for faculty_type in selected_types:
+            type_data = filtered_df[filtered_df['Type'] == faculty_type]
+            regression_data = type_data.groupby('Year')['Count'].sum().reset_index()
+
+            # Prepare data for regression
+            X = regression_data['Year'].values.reshape(-1, 1)
+            y = regression_data['Count'].values
+
+            if len(X) > 1:  # Ensure there is enough data for regression
+                # Fit Linear Regression
+                model = LinearRegression()
+                model.fit(X, y)
+
+                m = model.coef_[0]
+                b = model.intercept_
+
+                # Forecast future years
+                future_years = np.arange(2029, 2031).reshape(-1, 1)
+                future_counts = model.predict(future_years)
+                # st.write(f"### Forecasting Formula: Faculty Count = {m:.2f} × Year + {b:.2f}")
+
+                # Create forecast DataFrame
+                forecast_df = pd.DataFrame({
+                    'Year': future_years.flatten(),
+                    'Count': future_counts,
+                    'Type': faculty_type
+                })
+
+                # Combine historical and forecasted data
+                combined_df = pd.concat([regression_data.assign(Type=faculty_type), forecast_df], ignore_index=True)
+                combined_data.append(combined_df)
+
+        # Combine all types into one DataFrame
+        final_combined_df = pd.concat(combined_data, ignore_index=True)
+        final_combined_df['Year'] = final_combined_df['Year'].astype(str)  # Convert Year to string for chart
+
+        # Pivot for chart
+        forecast_chart_data = final_combined_df.pivot_table(index='Year', columns='Type', values='Count', aggfunc='sum').fillna(0)
+
+        # Display updated line chart
+        st.write("### Ähli görnüşler üçin birleşdirilen taryhy we çak edilýän maglumatlar")
+        st.line_chart(forecast_chart_data)
+
+        # Visualize Linear Fit for Each Type
+        st.write("### Linear Fit Visualization for All Types")
+        plt.figure(figsize=(12, 8))
+
+        for faculty_type in selected_types:
+            type_data = final_combined_df[final_combined_df['Type'] == faculty_type]
+            historical_data = type_data[type_data['Year'].astype(int) <= 2024]
+            future_data = type_data[type_data['Year'].astype(int) > 2024]
+
+            # Plot historical data
+            plt.scatter(historical_data['Year'], historical_data['Count'], label=f"{faculty_type} (taryhy)")
+
+            # Plot forecasted data
+            plt.plot(future_data['Year'], future_data['Count'], label=f"{faculty_type} (çaklama)")
+
+        plt.xlabel("Ýyl")
+        plt.ylabel("Sany")
+        plt.title("Enjamlaryň görnüşleri üçin çyzykly laýyklyk")
+        plt.legend()
+        plt.xticks(rotation=45)
+        st.pyplot(plt)
+
+    st.write("### Enjamlaryň ýyl we görnüşi boýunça hasaplamalar")
+    bar_chart_data = filtered_df.groupby(['Year', 'Type'])['Count'].sum().unstack(fill_value=0)
+    st.bar_chart(bar_chart_data)
+
+    st.write("### Wagtyň geçmegi bilen enjamlaryň  ýylylyk kartasy")
+    heatmap_data = filtered_df.pivot_table(index='Year', columns='Type', values='Count', aggfunc='sum', fill_value=0)
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(heatmap_data, annot=True, fmt=".1f", cmap="YlGnBu")
+    plt.title("Enjamlaryň ýylylyk kartasy")
+    plt.xlabel("Enjamlaryň görnüşi")
+    plt.ylabel("Ýyl")
+    st.pyplot(plt)
+
+
+    col1, col2, col3 = st.columns(3)
+
+            # Add content to each column
+    with col2:
+        st.write("### Enjamlaryň göterim paýy")
+
+        # Calculate total counts for each type
+        specific_types = ['Kompýuter tehnikalar', 'Interaktiw tagtalar', 'Proýektorlar', 'Interaktiw işjeň paneller', 'VR enjamlar', 'AR enjamlar']
+        distribution_data = filtered_df[filtered_df['Type'].isin(specific_types)]
+        distribution_summary = distribution_data.groupby('Type')['Count'].sum()
+
+        # Calculate overall faculty count
+        overall_faculty_count = long_df[
+            long_df['Type'] == 'Jemi'
+        ]['Count'].sum()
+
+        # Calculate percentage distribution
+        distribution_percentages = (distribution_summary / overall_faculty_count) * 100
+
+        # Plot pie chart
+        plt.figure(figsize=(18, 8))
+        plt.pie(distribution_percentages, labels=distribution_percentages.index, autopct='%1.1f%%', startangle=140, colors=["#f59393" , "#87cefa", "#f2f277", "#90ee90", "#e193f5", "#98f5eb"], textprops={"fontsize": 20}, pctdistance=1.2,labeldistance=1.8)
+        # plt.title("Percentage Distribution of Faculty Types")
+        st.pyplot(plt)
+
+
+
+
+    st.write("### Uniwersitet ara enjamlaryň paýlanyşy")
+
+    # Filter data for specific types
+    specific_types = ['Kompýuter tehnikalar', 'Interaktiw tagtalar', 'Proýektorlar', 'Interaktiw işjeň paneller', 'VR enjamlar', 'AR enjamlar']
+    filtered_specific_types = filtered_df[filtered_df['Type'].isin(specific_types)]
+
+    # Group data by University and Type
+    university_type_data = filtered_specific_types.groupby(['University', 'Type'])['Count'].sum().unstack(fill_value=0)
+
+    # Plot grouped bar chart
+    university_type_data.plot(kind='bar', figsize=(12, 8))
+    plt.title("Uniwersitet boýunça enjamlaryň paýlanyşy")
+    plt.xlabel("Uniwersitet")
+    plt.ylabel("Enjamlaryň sany")
+    plt.xticks(rotation=45)
+    plt.legend(title="Enjamlaryňgörnüşi")
+    st.pyplot(plt)
+
+    st.write("### Uniwersitetleriň her enjam boýunça göterim goşandy")
+
+    # Filter data for specific types
+    specific_types = ['Kompýuter tehnikalar', 'Interaktiw tagtalar', 'Proýektorlar', 'Interaktiw işjeň paneller', 'VR enjamlar', 'AR enjamlar']
+    filtered_specific_types = filtered_df[filtered_df['Type'].isin(specific_types)]
+
+    # Group data by University and Type
+    university_type_data = filtered_specific_types.groupby(['University', 'Type'])['Count'].sum().unstack(fill_value=0)
+
+    # Calculate percentage contribution
+    percentage_contribution = university_type_data.div(university_type_data.sum(axis=0), axis=1) * 100
+
+    # Use Streamlit's bar chart to visualize
+    st.bar_chart(percentage_contribution)
 
 
 
