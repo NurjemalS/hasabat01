@@ -46,10 +46,11 @@ st.sidebar.title("Nawigasiýa")
 
 		
 page = st.sidebar.radio("Kategoriýa saýlaň", [
-    "Hünärler",
-    "Hümarmen ugurlar",
-    "Bakalawr ugurlar",
-    "Magistr ugurlar",
+    "Quota", 
+    # "Hünärler",
+    # "Hümarmen ugurlar",
+    # "Bakalawr ugurlar",
+    # "Magistr ugurlar",
     "Alymlyk derejeler",
     "Halkara indedeksli zurnallar",
     "Maddy enjamlaýyn üpjünçilik",
@@ -1531,6 +1532,178 @@ if page ==  "Maddy enjamlaýyn üpjünçilik":
 
     # Use Streamlit's bar chart to visualize
     st.bar_chart(percentage_contribution)
+
+if page == "Quota":
+    st.title("Türkmenistanda ýokary bilimi ösdürmegiň Strategiýasyny taýýarlamak üçin MAGLUMATLAR")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    with st.expander("Bap: Mekdep uçurymlarynyň seljermeleri (2015–2042)"):
+
+        # Page Title
+        st.title("Mekdep uçurymlarynyň seljermeleri (2015–2042)")
+
+        # Load Data
+        graduates_data = pd.read_csv('restructured_school_graduates.csv')  # Replace with your restructured file
+        graduates_data.fillna(0, inplace=True)
+        graduates_data["Year"] = graduates_data["Year"].astype(str)
+
+        # Region Filter (No "Ählisi", includes "JEMI" as total)
+        regions = sorted(graduates_data['Region'].unique())
+        selected_regions = st.multiselect("Welaýat saýlaň", regions, default=regions)
+
+        # Year Filter (Includes "Ählisi" for all years)
+        years = sorted(graduates_data['Year'].unique())
+        years.insert(0, "Ählisi")  # Add "All" option
+        selected_years = st.multiselect("Ýyllary saýlaň", years, default="Ählisi")
+
+        # Filter Data
+        if "Ählisi" in selected_years:
+            filtered_df = graduates_data[graduates_data['Region'].isin(selected_regions)]
+        else:
+            filtered_df = graduates_data[(graduates_data['Region'].isin(selected_regions)) & (graduates_data['Year'].isin(selected_years))]
+
+        # Line Chart for Historical Data
+        st.write("### Mekdep uçurymlarynyň Ýyllar Boýy Tendensiýalary")
+        if not filtered_df.empty:
+            line_chart_data = filtered_df.pivot_table(index='Year', columns='Region', values='Graduates', aggfunc='sum').fillna(0)
+            st.line_chart(line_chart_data)
+        else:
+            st.write("Saýlananlar üçin maglumat ýok.")
+
+        # Pie Chart for Regional Contribution
+        col1, col2, col3 = st.columns(3)
+
+        # Add content to each column
+        with col2:
+            st.write("### Welaýatlaryň Göterim Paýy")
+
+            # Specify the regions for the pie chart
+            specific_regions = ['AHAL', 'BALKAN', 'DAŞOGUZ', 'LEBAP', 'MARY', 'AŞGABAT']
+            distribution_data = filtered_df[filtered_df['Region'].isin(specific_regions)]
+
+            # Check if there is data to process
+            if distribution_data.empty:
+                st.write("Saýlanan welaýatlar üçin maglumat ýok.")
+            else:
+                # Calculate total graduates per region
+                distribution_summary = distribution_data.groupby('Region')['Graduates'].sum()
+
+                # Calculate overall graduates
+                overall_graduates = distribution_summary.sum()
+
+                # Check for zero total graduates to avoid division errors
+                if overall_graduates == 0:
+                    st.write("Maglumatlar bar, ýöne welayat ara yok, yokarky diagramma esaslanyp bilersiňiz.")
+                else:
+                    # Calculate percentage distribution
+                    distribution_percentages = (distribution_summary / overall_graduates) * 100
+
+                    # Debugging (optional)
+                    # st.write("Distribution Summary:", distribution_summary)
+                    # st.write("Percentage Distribution:", distribution_percentages)
+
+                    # Plot pie chart
+                    plt.figure(figsize=(18, 8))
+                    plt.pie(distribution_percentages, labels=distribution_percentages.index, autopct='%1.1f%%',
+                            startangle=140, colors=["#f59393", "#87cefa", "#f2f277", "#90ee90", "#ffcccb", "#aaffc3"],
+                            textprops={"fontsize": 20})
+                    st.pyplot(plt)
+
+
+        # Graduates Grouped Bar Chart
+        st.write("### Mekdep Uçurymlarynyň Ýyl we Welaýat boýunça Hasaplamalar")
+        bar_chart_data = filtered_df.groupby(['Year', 'Region'])['Graduates'].sum().unstack(fill_value=0)
+        st.bar_chart(bar_chart_data)
+
+        # Graduates Heatmap
+        st.write("### Wagtyň Geçmegi bilen Mekdep Uçurymlarynyň Ýylylyk Kartasy")
+        heatmap_data = filtered_df.pivot_table(index='Year', columns='Region', values='Graduates', aggfunc='sum', fill_value=0)
+        plt.figure(figsize=(12, 8))
+        sns.heatmap(heatmap_data, annot=True, fmt=".1f", cmap="YlGnBu")
+        plt.title("Mekdep Uçurymlarynyň Ýylylyk Kartasy", fontsize=16)
+        plt.xlabel("Welaýat", fontsize=14)
+        plt.ylabel("Ýyl", fontsize=14)
+        plt.xticks(rotation=45, fontsize=10)
+        plt.yticks(fontsize=10)
+        st.pyplot(plt)
+
+
+        # Regional Lat/Lon Data
+        region_coords = pd.DataFrame({
+            'Region': ['AHAL', 'BALKAN', 'DAŞOGUZ', 'LEBAP', 'MARY', 'AŞGABAT'],
+            'Latitude': [38.982647, 39.5296023, 41.83, 39.12, 37.6, 37.95],
+            'Longitude': [58.213583, 54.2990248, 59.96, 63.57, 61.83, 58.38]
+        })
+        # Filter out "JEMI" from the regions
+        # Filter out "JEMI" from the regions
+        filtered_df = filtered_df[filtered_df['Region'] != 'JEMI']
+
+        # Map Visualization
+        st.write("### Welaýatlaryň Ýerleşiş Kartasy (Uçurymlar Bilen)")
+
+        if not filtered_df.empty:
+            # Aggregate data for the selected years
+            map_data = filtered_df.groupby('Region', as_index=False)['Graduates'].sum()
+
+            # Merge with region coordinates
+            map_data = pd.merge(map_data, region_coords, on="Region")
+
+            if map_data.empty:
+                st.write("Maglumat ýok!")
+            else:
+                # Plot the map
+                st.pydeck_chart(
+                    pdk.Deck(
+                        map_style="mapbox://styles/mapbox/light-v9",
+                        initial_view_state=pdk.ViewState(
+                            latitude=38.5, longitude=59, zoom=6, pitch=0  # Flat map (no tilt)
+                        ),
+                        layers=[
+                            pdk.Layer(
+                                "ScatterplotLayer",
+                                data=map_data,
+                                get_position="[Longitude, Latitude]",
+                                get_radius="Graduates *  1",  # Adjust radius based on data
+                                get_fill_color="[200, 30, 0, 160]",  # Red with transparency
+                                pickable=True,
+                            )
+                        ],
+                        tooltip={"text": "Region: {Region}\nGraduates: {Graduates}"}
+                    )
+                )
+        else:
+            st.write("Saýlanan maglumat ýok!")
+
+
+        # Calculate YoY Change for JEMI Graduates
+        st.write("### Mekdep Uçurymlarynyň Ýyl-ýyla Göterim Üýtgeýşi")
+        jemi_trend = graduates_data[graduates_data['Region'] == 'JEMI'].copy()
+        jemi_trend['Graduates'] = jemi_trend['Graduates'].astype(float)  # Ensure numeric type
+
+        if 'Graduates' in jemi_trend.columns and (jemi_trend['Graduates'] > 0).any():
+            # Calculate Year-over-Year percentage change
+            jemi_trend['YoY Change (%)'] = jemi_trend['Graduates'].pct_change() * 100
+
+            # Plot the YoY Change
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.barplot(
+                x='Year', y='YoY Change (%)', data=jemi_trend, palette="viridis", ax=ax
+            )
+            ax.axhline(0, color="gray", linestyle="--", linewidth=1)
+            ax.set_title("Mekdep Uçurymlarynyň Ýyl-ýyla Göterim Üýtgeýşi", fontsize=16, weight='bold')
+            ax.set_xlabel("Ýyl", fontsize=14)
+            ax.set_ylabel("Göterim Üýtgeýşi (%)", fontsize=14)
+            st.pyplot(fig)
+
+            # Display the percentage changes as a DataFrame below the plot
+            st.write("### Göterim Üýtgeýşi Maglumatlary")
+            st.dataframe(jemi_trend[['Year', 'Graduates', 'YoY Change (%)']].reset_index(drop=True))
+        else:
+            st.warning("JEMI uçurymlar boýunça maglumat ýok.")
+
+
+
 
 
 
