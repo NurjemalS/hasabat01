@@ -5,7 +5,6 @@ import seaborn as sns
 import pydeck as pdk
 import numpy as np
 from sklearn.linear_model import LinearRegression
-from plotly.graph_objects import Sunburst
 import plotly.express as px  # Ensure this import is included
 from math import pi
 import plotly.graph_objects as go
