@@ -1000,20 +1000,28 @@ if page == "Alymlyk derejeler":
     long_df["Year"] = long_df["Year"].astype(str)
 
     # Sidebar Filters
+    years = ["Ählisi"] + sorted(long_df['Year'].unique())
     universities = sorted(long_df['University'].unique())
     universities.insert(0, "Ählisi")  # Add "ALL" option at the beginning
 
     selected_universities = st.multiselect("Uniwersitet saýlaň", universities, default="Ählisi")
     selected_types = st.multiselect("Dereje saýlaň", sorted(long_df['Type'].unique()), default=long_df['Type'].unique())
+    selected_years = st.multiselect("Ýyl saýlaň", options=years, default="Ählisi")
+
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
+    filtered_df = long_df.copy()
 
     # Filter Data
-    if "Ählisi" in selected_universities:
-        filtered_df = long_df[long_df['Type'].isin(selected_types)]
-    else:
-        filtered_df = long_df[(long_df['University'].isin(selected_universities)) & (long_df['Type'].isin(selected_types))]
+    if "Ählisi" in selected_types:
+        filtered_df = filtered_df[filtered_df['Type'].isin(selected_types)]
+
+    if "Ählisi" not in selected_years:
+        filtered_df = filtered_df[filtered_df['Year'].isin(selected_years)]
+
+    if "Ählisi" not in selected_universities:
+        filtered_df = filtered_df[(filtered_df['University'].isin(selected_universities))]
 
     # Line Chart for Historical Data
     st.write("###  Alymlyk derejeleriniň ýyllar boýy tendensiýalary")
@@ -1138,7 +1146,7 @@ if page == "Alymlyk derejeler":
 
 
 
-    st.write("### Uniwersitet ara alymlyk derejeleriniň paýlanyşy")
+    st.write("### Uniwersitet ara alymlyk derejeleriniň paýlanyşy (dogry maglumat üçin bir ýyl saýlaň)")
 
     # Filter data for specific types
     specific_types = ['professor', 'dosent', 'ylymlaryň kandidaty', 'ylymlaryň doktory']
@@ -1156,7 +1164,8 @@ if page == "Alymlyk derejeler":
     plt.legend(title="Alymlyk derejeleriniň görnüşi")
     st.pyplot(plt)
 
-    st.write("### Uniwersitetleriň her alymlyk derejesi boýunça göterim goşandy")
+
+    st.write("### Uniwersitetleriň her alymlyk derejesi boýunça göterim goşandy (dogry maglumat üçin bir ýyl saýlaň)")
 
     # Filter data for specific types
     specific_types = ['professor', 'dosent', 'ylymlaryň kandidaty', 'ylymlaryň doktory']
@@ -1182,22 +1191,30 @@ if page == "Halkara indedeksli zurnallar":
 
     # Ensure Year is an integer
     long_df["Year"] = long_df["Year"].astype(str)
+    filtered_df = long_df.copy()
 
     # Sidebar Filters
+    years = ["Ählisi"] + sorted(long_df['Year'].unique())
     universities = sorted(long_df['University'].unique())
     universities.insert(0, "Ählisi")  # Add "ALL" option at the beginning
 
     selected_universities = st.multiselect("Uniwersitet saýlaň", universities, default="Ählisi")
     selected_types = st.multiselect("Makala görnüşi saýlaň", sorted(long_df['Type'].unique()), default=long_df['Type'].unique())
+    selected_years = st.multiselect("Ýyl saýlaň", options=years, default="Ählisi")
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Filter Data
-    if "Ählisi" in selected_universities:
-        filtered_df = long_df[long_df['Type'].isin(selected_types)]
-    else:
-        filtered_df = long_df[(long_df['University'].isin(selected_universities)) & (long_df['Type'].isin(selected_types))]
+    if "Ählisi" in selected_types:
+        filtered_df = filtered_df[filtered_df['Type'].isin(selected_types)]
+
+    if "Ählisi" not in selected_years:
+        filtered_df = filtered_df[filtered_df['Year'].isin(selected_years)]
+
+    if "Ählisi" not in selected_universities:
+        filtered_df = filtered_df[(filtered_df['University'].isin(selected_universities))]
+        
 
     # Line Chart for Historical Data
     st.write("### Halkara indedeksli makalalaryň ýyllar boýy tendensiýalary")
@@ -1366,22 +1383,30 @@ if page ==  "Maddy enjamlaýyn üpjünçilik":
 
     # Ensure Year is an integer
     long_df["Year"] = long_df["Year"].astype(str)
+    filtered_df = long_df.copy()
 
     # Sidebar Filters
+    years = ["Ählisi"] + sorted(long_df['Year'].unique())
     universities = sorted(long_df['University'].unique())
     universities.insert(0, "Ählisi")  # Add "ALL" option at the beginning
 
     selected_universities = st.multiselect("Uniwersitet saýlaň", universities, default="Ählisi")
     selected_types = st.multiselect("Enjam görnüşi saýlaň", sorted(long_df['Type'].unique()), default=long_df['Type'].unique())
+    selected_years = st.multiselect("Ýyl saýlaň", options=years, default="Ählisi")
+
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Filter Data
-    if "Ählisi" in selected_universities:
-        filtered_df = long_df[long_df['Type'].isin(selected_types)]
-    else:
-        filtered_df = long_df[(long_df['University'].isin(selected_universities)) & (long_df['Type'].isin(selected_types))]
+    if "Ählisi" in selected_types:
+        filtered_df = filtered_df[filtered_df['Type'].isin(selected_types)]
+
+    if "Ählisi" not in selected_years:
+        filtered_df = filtered_df[filtered_df['Year'].isin(selected_years)]
+
+    if "Ählisi" not in selected_universities:
+        filtered_df = filtered_df[(filtered_df['University'].isin(selected_universities))]
 
     # Line Chart for Historical Data
     st.write("### Enjamlaryň ýyllar boýy tendensiýalary")
@@ -1506,7 +1531,7 @@ if page ==  "Maddy enjamlaýyn üpjünçilik":
 
 
 
-    st.write("### Uniwersitet ara enjamlaryň paýlanyşy")
+    st.write("### Uniwersitet ara enjamlaryň paýlanyşy (dogry maglumat üçin bir ýyl saýlaň)")
 
     # Filter data for specific types
     specific_types = ['Kompýuter tehnikalar', 'Interaktiw tagtalar', 'Proýektorlar', 'Interaktiw işjeň paneller', 'VR enjamlar', 'AR enjamlar']
@@ -1524,7 +1549,7 @@ if page ==  "Maddy enjamlaýyn üpjünçilik":
     plt.legend(title="Enjamlaryňgörnüşi")
     st.pyplot(plt)
 
-    st.write("### Uniwersitetleriň her enjam boýunça göterim goşandy")
+    st.write("### Uniwersitetleriň her enjam boýunça göterim goşandy (dogry maglumat üçin bir ýyl saýlaň)")
 
     # Filter data for specific types
     specific_types = ['Kompýuter tehnikalar', 'Interaktiw tagtalar', 'Proýektorlar', 'Interaktiw işjeň paneller', 'VR enjamlar', 'AR enjamlar']
@@ -1718,8 +1743,6 @@ if page == "Quota":
             "Scholarship": "BŽ",
             "Non Scholarship": "Tölegli"
         })
-
-
 
 
         # Multiselect for filters with "ALL" option
