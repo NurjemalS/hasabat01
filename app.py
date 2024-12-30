@@ -5,6 +5,12 @@ import seaborn as sns
 import pydeck as pdk
 import numpy as np
 from sklearn.linear_model import LinearRegression
+from plotly.graph_objects import Sunburst
+import plotly.express as px  # Ensure this import is included
+from math import pi
+import plotly.graph_objects as go
+
+
 
 # from squarify import normalize_sizes, squarify
 
@@ -792,8 +798,9 @@ if page == "Hyzmatdaşlyklar":
                         data=map_data,
                         get_position="[Longitude, Latitude]",
                         get_radius="Count * 7000",
-                        get_fill_color="[200, 30, 0, 160]", 
+                        get_fill_color="[144, 238, 0,  144]", 
                         # [144, 238, 0,  144]
+                        # [200, 30, 0, 160]
                         pickable=True,
                     )
                 ],
@@ -1665,7 +1672,7 @@ if page == "Quota":
                                 data=map_data,
                                 get_position="[Longitude, Latitude]",
                                 get_radius="Graduates *  1",  # Adjust radius based on data
-                                get_fill_color="[200, 30, 0, 160]",  # Red with transparency
+                                get_fill_color="[0, 255, 0, 144]",  # Red with transparency
                                 pickable=True,
                             )
                         ],
@@ -1702,6 +1709,562 @@ if page == "Quota":
         else:
             st.warning("JEMI uçurymlar boýunça maglumat ýok.")
 
+    with st.expander("Bap: ÝOM kwota seljermeleri (2015–2024)"):
+        # Title for the dashboard
+        st.title("ÝOM kwota seljermeleri (2015–2024)")
+        data = pd.read_csv('Q_all_restructured_data.csv')  # Replace with your restructured file
+        data["Ýyl"] = data["Ýyl"].astype(str)
+        # Replace values in 'Student Type' column
+        data["Talyp görnüşi"] = data["Talyp görnüşi"].replace({
+            "Scholarship": "BŽ",
+            "Non Scholarship": "Tölegli"
+        })
+
+
+
+
+        # Multiselect for filters with "ALL" option
+        years = ["Ählisi"] + sorted(data['Ýyl'].unique())
+        universities = ["Ählisi"] + sorted(data['Uniwersitet'].unique())
+        faculties = ["Ählisi"] + sorted(data['Ugur'].unique())
+        regions = ["Ählisi"] + sorted(data['Welaýat'].unique())
+        study_types = ["Ählisi"] + sorted(data['Hünär'].unique())
+        student_types = ["Ählisi"] + sorted(data['Talyp görnüşi'].unique())
+
+        col1, col2, col3 = st.columns(3)
+
+        # Add content to each column
+        with col1:
+            selected_years = st.multiselect("Ýyl saýlaň", options=years, default="Ählisi")
+        with col2:
+            selected_universities = st.multiselect("Uniwersitet saýlaň", options=universities, default="Ählisi")
+        with col3:
+            selected_faculties = st.multiselect("Ugur saýlaň", options=faculties, default="Ählisi")
+
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            selected_regions = st.multiselect("Welaýat saýlaň", options=regions, default="Ählisi")
+        with col2:
+            selected_study_types = st.multiselect("Hünär saýlaň", options=study_types, default="Ählisi")
+        with col3:
+            selected_student_types = st.multiselect("Talyp görnüşini saýlaň", options=student_types, default="Ählisi")
+
+        # Apply filters
+        filtered_data = data.copy()
+
+
+
+        if "Ählisi" not in selected_years:
+            filtered_data = filtered_data[filtered_data['Ýyl'].isin(selected_years)]
+
+        if "Ählisi" not in selected_universities:
+            filtered_data = filtered_data[filtered_data['Uniwersitet'].isin(selected_universities)]
+
+        if "Ählisi" not in selected_faculties:
+            filtered_data = filtered_data[filtered_data['Ugur'].isin(selected_faculties)]
+
+        if "Ählisi" not in selected_regions:
+            filtered_data = filtered_data[filtered_data['Welaýat'].isin(selected_regions)]
+
+        if "Ählisi" not in selected_study_types:
+            filtered_data = filtered_data[filtered_data['Hünär'].isin(selected_study_types)]
+
+        if "Ählisi" not in selected_student_types:
+            filtered_data = filtered_data[filtered_data['Talyp görnüşi'].isin(selected_student_types)]
+
+        # Display Filtered Data
+        # st.write("### Filtered Data", filtered_data)
+
+        university_coords = pd.DataFrame({
+                    'Uniwersitet': ['TDU', 'HYYÖU', 'HNGU', 'TDBGI', 'TDLU', 'TDBSI', 'HGI', 'TDMaI', 'TDYDI', 'TTII', 'TMDDI', 'TITU', 'TITUKI', 'TOHU', 'TDMI', 'TMK', 'TDÇA', 'SSTDMI', 'TDEI', 'TOHI', 'HAA'],
+                    'Latitude': [37.9308047, 37.9311669, 37.877472, 37.9242034, 37.8784063, 37.9187744, 37.9293351, 37.9211045, 37.8998289, 37.9420864, 37.9507819, 37.9612627, 38.0434327, 37.9526083, 37.8962383, 37.9373864, 37.936482, 39.0885626, 37.2584823, 41.8280269, 38.0550484],
+                    'Longitude': [58.3848102, 58.3876358, 58.3861546, 58.4254617, 58.3641239, 58.3764255, 58.3887706, 58.3903317, 58.362772, 58.3784814, 58.3526043, 58.3246639, 58.1660508, 58.3420542, 58.3656084, 58.3801838, 58.3695422, 63.5794743, 62.3403715, 59.9348195, 58.047581]
+                })
+
+        region_coords = pd.DataFrame({
+            'Welaýat': ['AHAL', 'BALKAN', 'DAŞOGUZ', 'LEBAP', 'MARY', 'AŞGABAT'],
+            'Latitude': [38.982647, 39.5296023, 41.83, 39.12, 37.6, 37.95],
+            'Longitude': [58.213583, 54.2990248, 59.96, 63.57, 61.83, 58.38]
+        })
+
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+
+        # Regional Map
+        # Regional Map
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.write("### Welaýat ara karta")
+            if not filtered_data.empty:
+                # Aggregate data for the selected regions
+                map_data = filtered_data.groupby('Welaýat', as_index=False)['Kwota'].sum()
+
+                # Merge with region coordinates
+                map_data = pd.merge(map_data, region_coords, on="Welaýat", how="inner")
+
+                if map_data.empty:
+                    st.write("No region data available!")
+                else:
+                    # Plot the map
+                    st.pydeck_chart(
+                        pdk.Deck(
+                            map_style="mapbox://styles/mapbox/light-v9",
+                            initial_view_state=pdk.ViewState(
+                                latitude=38.5, longitude=59, zoom=6, pitch=0  # Flat map (no tilt)
+                            ),
+                            layers=[
+                                pdk.Layer(
+                                    "ScatterplotLayer",
+                                    data=map_data,
+                                    get_position="[Longitude, Latitude]",
+                                    get_radius="Kwota * 7",  # Adjust radius based on data
+                                    get_fill_color="[0, 255, 0, 144]",  # Green with transparency
+                                    pickable=True,
+                                )
+                            ],
+                            tooltip={"text": "Welaýat: {Welaýat}\Kwota: {Kwota}"}
+                        )
+                    )
+            else:
+                st.write("No region data available!")
+
+        with col2:
+            st.write("### Uniwersitet ara kartasy")
+            if not filtered_data.empty:
+                # Aggregate data for the selected universities
+                university_map_data = filtered_data.groupby('Uniwersitet', as_index=False)['Kwota'].sum()
+
+                # Merge with university coordinates
+                university_map_data = pd.merge(university_map_data, university_coords, on="Uniwersitet", how="inner")
+
+                if university_map_data.empty:
+                    st.write("No university data available!")
+                else:
+                    # Plot the map
+                    st.pydeck_chart(
+                        pdk.Deck(
+                            map_style="mapbox://styles/mapbox/light-v9",
+                            initial_view_state=pdk.ViewState(
+                                latitude=38, longitude=59, zoom=5, pitch=0  # Flat map
+                            ),
+                            layers=[
+                                pdk.Layer(
+                                    "ScatterplotLayer",
+                                    data=university_map_data,
+                                    get_position="[Longitude, Latitude]",
+                                    get_radius="Kwota * 10",  # Adjust radius based on data
+                                    get_fill_color="[0, 0, 255, 144]",  # Blue with transparency
+                                    pickable=True,
+                                )
+                            ],
+                            tooltip={"text": "Uniwersitet: {Uniwersitet}\Kwota: {Kwota}"}
+                        )
+                    )
+            else:
+                st.write("No university data available!")
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+
+
+        # Create a reusable pie chart function
+        def create_pie_chart(data, group_by, title):
+            grouped_data = data.groupby(group_by)['Kwota'].sum()
+            percentages = (grouped_data / grouped_data.sum()) * 100
+
+            # Plot
+            fig, ax = plt.subplots(figsize=(8, 6))
+            ax.pie(
+                percentages,
+                labels=percentages.index,
+                autopct='%1.1f%%',
+                startangle=140,
+                colors=["#f59393", "#87cefa", "#f2f277", "#90ee90", "#ffcccb", "#aaffc3"]
+            )
+            ax.set_title(title, fontsize=16)
+            st.pyplot(fig)
+
+        col1, col2, col3 = st.columns(3)
+        # Pie Chart for Regions
+        with col1:
+            create_pie_chart(filtered_data, 'Welaýat', "Welaýat boýunça kwota paýlanyşy")
+        # Pie Chart for Student Types
+        with col2:
+            create_pie_chart(filtered_data, 'Talyp görnüşi', "Talyp görnüşi boýunça kwota paýlanyşy (BZ vs. Tölegli)")
+        with col3:
+            create_pie_chart(filtered_data, 'Hünär', "Hünäri boýunça kwota paýlanyşy")
+
+
+        col1, col2= st.columns(2)
+        # Pie Chart for Faculties (Ugurlar)
+        with col1:
+            create_pie_chart(filtered_data, 'Ugur', "Ugur boýunça kwota paýlanyşy")
+
+        # Pie Chart for Universities
+        with col2:
+            create_pie_chart(filtered_data, 'Uniwersitet', "Uniwersitet boýunça kwota paýlanyşy")
+
+
+
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.write("### Derňemek üçin üýtgeýji saýlaň")
+        group_by_options = ["Uniwersitet", "Ugur", "Welaýat", "Hünär", "Talyp görnüşi"]
+        selected_group_by = st.multiselect("Üýtgeýjileri saýlaň", options=group_by_options, default=["Uniwersitet"])
+
+        if selected_group_by:
+            # Aggregate Data
+            line_chart_data = filtered_data.groupby(["Ýyl"] + selected_group_by, as_index=False)['Kwota'].sum()
+
+            # Pivot Data for Line Chart
+            line_chart_pivot = line_chart_data.pivot_table(index="Ýyl", columns=selected_group_by, values="Kwota", aggfunc="sum").fillna(0)
+
+            # Display Line Chart
+            st.write(f"### Kwota tendensiýasy - {', '.join(selected_group_by)}")
+            st.line_chart(line_chart_pivot)
+        else:
+            st.warning("Please select at least one variable to group by.")
+
+
+        st.write("### Ýylyň dowamynda göterim üýtgemeginiň derňewi")
+        # Dynamic Grouping Variables
+        selected_group_by_pct = st.multiselect("Üýtgeýji saýlaň", options=group_by_options, default=["Uniwersitet"])
+
+        if selected_group_by_pct:
+            # Aggregate Data for Quota
+            percentage_data = filtered_data.groupby(["Ýyl"] + selected_group_by_pct, as_index=False)['Kwota'].sum()
+
+            # Pivot Data for Percentage Change Calculation
+            percentage_pivot = percentage_data.pivot_table(index="Ýyl", columns=selected_group_by_pct, values="Ýyl", aggfunc="sum").fillna(0)
+
+            # Calculate Year-over-Year Percentage Change
+            percentage_change = percentage_pivot.pct_change().fillna(0) * 100
+
+            # Display Percentage Change Line Chart
+            st.write(f"### Göterim üýtgemegi -  {', '.join(selected_group_by_pct)}")
+            st.line_chart(percentage_change)
+
+            # Display Data Table for Reference
+            st.write("### Göterim üýtgemegi ")
+            st.dataframe(percentage_change)
+        else:
+            st.warning("Please select at least one variable to group by.")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        col1, col2, col3 = st.columns(3)
+        # Pivot data for heatmap
+
+        with col1:
+            heatmap_data = filtered_data.pivot_table(index='Welaýat', columns='Ýyl', values='Kwota', aggfunc='sum', fill_value=0)
+
+            # Plot Heatmap
+            st.write("###  Welaýat we ýyl boýunça kwota ýylylyk kartasy")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(heatmap_data, annot=True, fmt=".0f", cmap="YlGnBu", cbar=True, linewidths=.5, ax=ax)
+            ax.set_title("Kwota ýylylyk kartasy")
+            ax.set_xlabel("Ýyl")
+            ax.set_ylabel("Welaýat")
+            st.pyplot(fig)
+
+        with col2:
+            heatmap_data = filtered_data.pivot_table(index='Uniwersitet', columns='Ýyl', values='Kwota', aggfunc='sum', fill_value=0)
+
+            st.write("### Uniwersitet we ýyl boýunça kwota ýylylyk kartasy")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(heatmap_data, annot=True, fmt=".0f", cmap="YlGnBu", cbar=True, linewidths=.5, ax=ax)
+            ax.set_title("Kwota ýylylyk kartasy")
+            ax.set_xlabel("Ýyl")
+            ax.set_ylabel("Uniwersitet")
+            st.pyplot(fig)
+
+        with col3:
+            heatmap_data = filtered_data.pivot_table(index='Talyp görnüşi', columns='Ýyl', values='Kwota', aggfunc='sum', fill_value=0)
+
+            st.write("### Talyp görnüşi we ýyl boýunça kwota ýylylyk kartasy")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(heatmap_data, annot=True, fmt=".0f", cmap="YlGnBu", cbar=True, linewidths=.5, ax=ax)
+            ax.set_title("kwota ýylylyk kartasy")
+            ax.set_xlabel("Ýyl")
+            ax.set_ylabel("Talyp görnüşi")
+            st.pyplot(fig)
+
+
+
+        # Prepare Data
+        # Prepare the sunburst data
+        sunburst_data = filtered_data[filtered_data['Kwota'] > 0].groupby(['Uniwersitet', 'Ugur', 'Welaýat'], as_index=False)['Kwota'].sum()
+        st.write("### Uniwersitetlerde, ugurlarda we welaýatlarda kwota paýlanyşy")
+        if sunburst_data.empty:
+            st.warning("No data available to display. Please refine your filters.")
+        else:
+            fig = px.sunburst(
+                data_frame=sunburst_data,
+                path=['Uniwersitet', 'Ugur', 'Welaýat'],
+                values='Kwota',
+                # title="Uniwersitetlerde, fakultetlerde we welaýatlarda kwota paýlanyşy",
+                color='Kwota',
+                color_continuous_scale='viridis'
+            )
+            st.plotly_chart(fig)
+
+
+        # Group Data for Bubble Chart
+        bubble_data = filtered_data.groupby(['Uniwersitet', 'Ugur'])['Kwota'].sum().reset_index()
+
+        # Plot Bubble Chart
+        st.write("### Kwota paýlanyşynyň köpürjik diagrammasy")
+        fig = px.scatter(
+            bubble_data,
+            x='Uniwersitet',
+            y='Ugur',
+            size='Kwota',
+            color='Kwota',
+            # title="Bubble Chart: Quota Distribution",
+            labels={'Kwota': 'Kwota'},
+            hover_data=['Kwota']
+        )
+        st.plotly_chart(fig)
+
+        # Ýyl,Uniwersitet,Ugur,Welaýat,Hünär,Talyp görnüşi,Kwota
+
+
+        # # Group and Pivot Data for Stacked Bar
+        # stacked_data = filtered_data.groupby(['Ýyl', 'Ugur', 'Hünär'])['Kwota'].sum().reset_index()
+        # stacked_pivot = stacked_data.pivot(index='Ýyl', columns='Ugur', values='Kwota').fillna(0)
+
+        # # Plot Stacked Bar Chart
+        # st.write("### Stacked Bar Chart of Quota by Faculty")
+        # fig, ax = plt.subplots(figsize=(12, 6))
+        # stacked_pivot.plot(kind='bar', stacked=True, ax=ax, colormap='viridis')
+        # ax.set_title("Quota Distribution by Faculty and Year")
+        # ax.set_ylabel("Quota")
+        # ax.set_xlabel("Year")
+        # st.pyplot(fig)
+
+
+        # Treemap Data
+
+
+        # Prepare Data for Radar Chart
+        # Group data by 'Ugur' and sum 'Kwota'
+        # Group data by 'Ugur' and sum 'Kwota'
+        grouped_data = filtered_data.groupby(['Ugur', 'Talyp görnüşi'])['Kwota'].sum().unstack(fill_value=0)
+        topics = grouped_data.index.tolist()
+
+        # Data layers (BZ and Tolegli)
+        data_layers = [grouped_data[col].values for col in grouped_data.columns]
+        labels = grouped_data.columns.tolist()
+
+        # Add first element to close the radar chart loop
+        angles = [n / float(len(topics)) * 2 * pi for n in range(len(topics))]
+        angles += angles[:1]
+
+        for idx in range(len(data_layers)):
+            data_layers[idx] = list(data_layers[idx]) + [data_layers[idx][0]]  # Close loop
+
+        # Plot radar chart
+        fig, ax = plt.subplots(figsize=(12, 12), subplot_kw={"polar": True})
+        colors = ["blue", "orange"] # Customize colors for layers
+
+        for idx, layer in enumerate(data_layers):
+            ax.bar(
+                angles,
+                layer,
+                color=colors[idx],
+                alpha=0.6,
+                width=0.35,
+                label=labels[idx]
+            )
+
+        # Add labels for topics
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(topics, fontsize=16, rotation=45)
+
+        # Title and Legend
+        ax.set_title("Ugurlar we Talyp Görnüşleri", va='bottom', fontsize=22, pad=15)
+
+        ax.legend(loc="upper right", bbox_to_anchor=(1.2, 1.1), fontsize=16)
+
+        # Increase radial labels font size
+        ax.tick_params(axis='y', labelsize=16)
+
+        # Streamlit Display
+        st.pyplot(fig)
+
+
+        # University-wise Tolegli and BZ Students
+        st.write("### Uniwersitet ara talyp görnüşi")
+        university_bar_data = filtered_data.groupby(['Uniwersitet', 'Talyp görnüşi'])['Kwota'].sum().unstack(fill_value=0)
+        st.bar_chart(university_bar_data)
+
+        # Ugur-wise Tolegli and BZ Students
+        col1, col2= st.columns(2)
+        with col1:
+            st.write("### Ugurlar ara talyp görnüşi")
+            ugur_bar_data = filtered_data.groupby(['Ugur', 'Talyp görnüşi'])['Kwota'].sum().unstack(fill_value=0)
+            st.bar_chart(ugur_bar_data)
+
+        with col2:
+
+            st.write("### Welaýat ara talyp görnüşi ")
+            university_ugur_bar_data = filtered_data.groupby(['Welaýat', 'Talyp görnüşi'])['Kwota'].sum().unstack(fill_value=0)
+            st.bar_chart(university_ugur_bar_data)
+
+        # University-wise Ugurlar
+        st.write("###  Uniwersitet ara Ugurlar")
+        university_ugur_bar_data = filtered_data.groupby(['Uniwersitet', 'Ugur'])['Kwota'].sum().unstack(fill_value=0)
+        st.bar_chart(university_ugur_bar_data)
+
+        st.write("### Uniwersitet ara Hünärler")
+        university_ugur_bar_data = filtered_data.groupby(['Uniwersitet', 'Hünär'])['Kwota'].sum().unstack(fill_value=0)
+        st.bar_chart(university_ugur_bar_data)
+
+        st.write("### Uniwersitet ara welaýat")
+        university_ugur_bar_data = filtered_data.groupby(['Uniwersitet', 'Welaýat'])['Kwota'].sum().unstack(fill_value=0)
+        st.bar_chart(university_ugur_bar_data)
+
+
+
+        # Ýyl,Uniwersitet,Ugur,Welaýat,Hünär,Talyp görnüşi,Kwota
+        # Grouping data
+        connections = filtered_data.groupby(['Welaýat', 'Uniwersitet', 'Talyp görnüşi'])['Kwota'].sum().reset_index()
+
+        # Create source, target, and values for the Sankey diagram
+        regions = connections['Welaýat'].unique()
+        universities = connections['Uniwersitet'].unique()
+        student_types = connections['Talyp görnüşi'].unique()
+
+        region_index = {region: i for i, region in enumerate(regions)}
+        university_index = {university: i + len(regions) for i, university in enumerate(universities)}
+        student_type_index = {stype: i + len(regions) + len(universities) for i, stype in enumerate(student_types)}
+
+        # Nodes
+        nodes = list(regions) + list(universities) + list(student_types)
+
+        # Links
+        links = []
+        for _, row in connections.iterrows():
+            links.append({
+                'source': region_index[row['Welaýat']],
+                'target': university_index[row['Uniwersitet']],
+                'value': row['Kwota']
+            })
+            links.append({
+                'source': university_index[row['Uniwersitet']],
+                'target': student_type_index[row['Talyp görnüşi']],
+                'value': row['Kwota']
+            })
+
+        # Prepare Sankey Data
+        sankey_data = go.Sankey(
+            node=dict(
+                pad=15,
+                thickness=20,
+                line=dict(color="black", width=0.5),
+                label=nodes
+            ),
+            link=dict(
+                source=[link['source'] for link in links],
+                target=[link['target'] for link in links],
+                value=[link['value'] for link in links]
+            )
+        )
+
+        # Create the figure
+        st.write("### Maglumat akymy diagrammasy")
+        fig = go.Figure(sankey_data)
+        # fig.update_layout(title_text="Sankey Diagram: Region to University to Student Type", font_size=10)
+
+        # Display the figure in Streamlit
+        st.plotly_chart(fig)
+
+
+
+
+        # Define variable options
+        variables = ['Ýyl', 'Uniwersitet', 'Ugur', 'Welaýat', 'Hünär', 'Talyp görnüşi', 'Kwota']
+
+        st.write("### Sepme diagramma")
+
+        # User selections
+        col1, col2 = st.columns(2)
+        with col1:
+            x_axis = st.selectbox("X-oky üçin üýtgeýän ululuk saýlaň", variables, index=0)
+            y_axis = st.selectbox("Y-oky üçin üýtgeýän ululuk saýlaň", variables, index=1)
+        with col2:
+            color_by = st.selectbox("Reňklendirmek üçin saýlaň", ["None"] + variables, index=0)
+
+
+        # Prepare scatter plot
+
+        if x_axis and y_axis:
+            plot_data = filtered_data.copy()
+
+            # Handle "None" options for color and size
+            color = color_by if color_by != "None" else None
+        
+            # Create scatter plot
+            fig = px.scatter(
+                plot_data,
+                x=x_axis,
+                y=y_axis,
+                color=color,
+                hover_data=variables,
+                title=f"Scatter Plot: {x_axis} vs {y_axis}",
+            )
+            st.plotly_chart(fig)
+        else:
+            st.write("Please select variables for X-Axis and Y-Axis.")
+
+
+        # Define available variables for selection
+        variables = ['Ýyl', 'Uniwersitet', 'Ugur', 'Welaýat', 'Hünär', 'Talyp görnüşi']
+
+        st.write("### Topar diagramma")
+
+        # User selections for clustering and grouping
+        st.write("Üýtgeýän ululyklary saýlaň")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            x_axis = st.selectbox("Y-oky", variables, index=2)  # Default is 'Ugur'
+        with col2:
+            cluster_by = st.selectbox("Toparlamak üçin", variables, index=5)  # Default is 'Talyp görnüşi'
+        with col3:
+            color_by = st.selectbox("Reňklemek üçin", variables, index=3)  # Default is 'Welaýat'
+
+        # Prepare data for the chart
+        # st.write("Clustered Bar Chart Visualization")
+        if x_axis and cluster_by and color_by:
+            bar_data = data.groupby([x_axis, cluster_by, color_by])['Kwota'].sum().reset_index()
+
+            # Create the clustered bar chart
+            fig = px.bar(
+                bar_data,
+                x='Kwota',
+                y=x_axis,
+                color=color_by,
+                barmode='group',
+                facet_col=cluster_by,
+                title=f"Topar diagrammasy: {x_axis} - Kwota, {cluster_by} boýunça toparlanan we {color_by} boýunça reňklenen ",
+                labels={'Kwota': 'Kwota'},
+                height=600,
+            )
+            st.plotly_chart(fig)
+        else:
+            st.write("Please select variables for all axes.")
+
+    with st.expander("Bap: ÝOM kwota çaklamalary (2024–2035)"):
+        st.title("ÝOM kwota çaklamalary (2024–2035)")
 
 
 
