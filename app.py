@@ -52,7 +52,7 @@ st.sidebar.title("Nawigasiýa")
 		
 page = st.sidebar.radio("Kategoriýa saýlaň", [
     "Quota", 
-    # "Hünärler",
+    "Hünärler",
     # "Hümarmen ugurlar",
     # "Bakalawr ugurlar",
     # "Magistr ugurlar",
@@ -2287,6 +2287,52 @@ if page == "Quota":
 
     with st.expander("Bap: ÝOM kwota çaklamalary (2024–2035)"):
         st.title("ÝOM kwota çaklamalary (2024–2035)")
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        quota_data = pd.read_csv("Q_all_restructured_data.csv")  # Replace with your actual file
+        graduates_data = pd.read_csv("restructured_school_graduates.csv")  # Replace with your actual file
+        print(quota_data.dtypes)
+        print(graduates_data.dtypes)
+        # Filter 2024 data
+        quota_2024 = quota_data[quota_data['Ýyl'] == 2024]
+        graduates_2024 = graduates_data[graduates_data['Year'] == 2024]
+        print(graduates_2024)
+
+        # # Overall AHWAT
+        total_kwota_2024 = quota_2024['Kwota'].sum()
+        total_graduates_2024 = graduates_2024[graduates_2024['Region'] == 'JEMI']
+        overall_ahwat = total_kwota_2024 / total_graduates_2024['Graduates']
+        print(overall_ahwat)
+
+        # # AHWAT by Region
+        region_kwota_2024 = quota_2024.groupby('Welaýat')['Kwota'].sum().reset_index()
+        region_graduates_2024 = graduates_2024.groupby('Region')['Graduates'].sum().reset_index()
+        region_ahwat = pd.merge(region_kwota_2024, region_graduates_2024, left_on='Welaýat', right_on='Region')
+        region_ahwat['AHWAT'] = region_ahwat['Kwota'] / region_ahwat['Graduates']
+        print(region_ahwat)
+        region_ahwat = region_ahwat.drop(columns=['Region'])
+        region_ahwat['AHWAT'] = region_ahwat['AHWAT'] * 100 
+
+        col1, col2, col3 = st.columns(3)
+
+        # Add content to each column
+        with col1:
+            st.metric(label="ÝOM kwota 2024:", value=total_kwota_2024)
+        with col2:
+            st.metric(label="Uçurum 2024:", value= total_graduates_2024['Graduates'])
+        with col3:
+            st.metric(label="Ahwat:", value=overall_ahwat*100)
+        
+        st.write("### Welaýat ara ahwat")
+        st.dataframe(region_ahwat)
+
+        st.write("### Şseýlelikde jemi we welaýat ara kwota çaklamalary")
+
+
+
+
+
 
 
 
