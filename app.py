@@ -1610,7 +1610,7 @@ if page == "Quota":
             st.write("### Welaýatlaryň Göterim Paýy")
 
             # Specify the regions for the pie chart
-            specific_regions = ['AHAL', 'BALKAN', 'DAŞOGUZ', 'LEBAP', 'MARY', 'AŞGABAT']
+            specific_regions = ['AHAL', 'BALKAN', 'DAŞOGUZ', 'LEBAP', 'MARY', 'AŞGABAT', 'ARKADAG']
             distribution_data = filtered_df[filtered_df['Region'].isin(specific_regions)]
 
             # Check if there is data to process
@@ -1662,9 +1662,9 @@ if page == "Quota":
 
         # Regional Lat/Lon Data
         region_coords = pd.DataFrame({
-            'Region': ['AHAL', 'BALKAN', 'DAŞOGUZ', 'LEBAP', 'MARY', 'AŞGABAT'],
-            'Latitude': [38.982647, 39.5296023, 41.83, 39.12, 37.6, 37.95],
-            'Longitude': [58.213583, 54.2990248, 59.96, 63.57, 61.83, 58.38]
+            'Region': ['AHAL', 'BALKAN', 'DAŞOGUZ', 'LEBAP', 'MARY', 'AŞGABAT', 'ARKADAG'],
+            'Latitude': [38.982647, 39.5296023, 41.83, 39.12, 37.6, 37.95, 38.096559],
+            'Longitude': [58.213583, 54.2990248, 59.96, 63.57, 61.83, 58.38, 58.0553248]
         })
         # Filter out "JEMI" from the regions
         # Filter out "JEMI" from the regions
@@ -1695,7 +1695,7 @@ if page == "Quota":
                                 "ScatterplotLayer",
                                 data=map_data,
                                 get_position="[Longitude, Latitude]",
-                                get_radius="Graduates *  1",  # Adjust radius based on data
+                                get_radius="Graduates * 0.25",  # Adjust radius based on data
                                 get_fill_color="[0, 255, 0, 144]",  # Red with transparency
                                 pickable=True,
                             )
@@ -1707,31 +1707,65 @@ if page == "Quota":
             st.write("Saýlanan maglumat ýok!")
 
 
-        # Calculate YoY Change for JEMI Graduates
-        st.write("### Mekdep Uçurymlarynyň Ýyl-ýyla Göterim Üýtgeýşi")
-        jemi_trend = graduates_data[graduates_data['Region'] == 'JEMI'].copy()
-        jemi_trend['Graduates'] = jemi_trend['Graduates'].astype(float)  # Ensure numeric type
+        # # Calculate YoY Change for JEMI Graduates
+        # st.write("### Mekdep Uçurymlarynyň Ýyl-ýyla Göterim Üýtgeýşi")
+        # jemi_trend = graduates_data[graduates_data['Region'] == 'JEMI'].copy()
+        # jemi_trend['Graduates'] = jemi_trend['Graduates'].astype(float)  # Ensure numeric type
 
-        if 'Graduates' in jemi_trend.columns and (jemi_trend['Graduates'] > 0).any():
-            # Calculate Year-over-Year percentage change
-            jemi_trend['YoY Change (%)'] = jemi_trend['Graduates'].pct_change() * 100
+        # if 'Graduates' in jemi_trend.columns and (jemi_trend['Graduates'] > 0).any():
+        #     # Calculate Year-over-Year percentage change
+        #     jemi_trend['YoY Change (%)'] = jemi_trend['Graduates'].pct_change() * 100
 
-            # Plot the YoY Change
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.barplot(
-                x='Year', y='YoY Change (%)', data=jemi_trend, palette="viridis", ax=ax
-            )
-            ax.axhline(0, color="gray", linestyle="--", linewidth=1)
-            ax.set_title("Mekdep Uçurymlarynyň Ýyl-ýyla Göterim Üýtgeýşi", fontsize=16, weight='bold')
-            ax.set_xlabel("Ýyl", fontsize=14)
-            ax.set_ylabel("Göterim Üýtgeýşi (%)", fontsize=14)
-            st.pyplot(fig)
+        #     # Plot the YoY Change
+        #     fig, ax = plt.subplots(figsize=(10, 6))
+        #     sns.barplot(
+        #         x='Year', y='YoY Change (%)', data=jemi_trend, palette="viridis", ax=ax
+        #     )
+        #     ax.axhline(0, color="gray", linestyle="--", linewidth=1)
+        #     ax.set_title("Mekdep Uçurymlarynyň Ýyl-ýyla Göterim Üýtgeýşi", fontsize=16, weight='bold')
+        #     ax.set_xlabel("Ýyl", fontsize=14)
+        #     ax.set_ylabel("Göterim Üýtgeýşi (%)", fontsize=14)
+        #     st.pyplot(fig)
 
-            # Display the percentage changes as a DataFrame below the plot
-            st.write("### Göterim Üýtgeýşi Maglumatlary")
-            st.dataframe(jemi_trend[['Year', 'Graduates', 'YoY Change (%)']].reset_index(drop=True))
-        else:
-            st.warning("JEMI uçurymlar boýunça maglumat ýok.")
+        #     # Display the percentage changes as a DataFrame below the plot
+        #     st.write("### Göterim Üýtgeýşi Maglumatlary")
+        #     st.dataframe(jemi_trend[['Year', 'Graduates', 'YoY Change (%)']].reset_index(drop=True))
+        # else:
+        #     st.warning("JEMI uçurymlar boýunça maglumat ýok.")
+    
+
+      # Dynamic Region Selection
+        st.write("### Göterim üýtgemegi")
+
+        region_options = ["ALL"] + sorted(filtered_df['Region'].unique()) + ["JEMI"]
+        selected_regions = st.multiselect("Welaýat saýlaň", options=region_options, default="ALL")
+
+        # Aggregate Data for Graduates
+        percentage_data = filtered_df.groupby(["Year", "Region"], as_index=False)['Graduates'].sum()
+
+        # Add Total (JEMI) Column
+        total_data = percentage_data.groupby("Year", as_index=False)['Graduates'].sum()
+        total_data["Region"] = "JEMI"
+        percentage_data = pd.concat([percentage_data, total_data], ignore_index=True)
+
+        # Filter by Selected Regions
+        if "ALL" not in selected_regions:
+            selected_regions = [region for region in selected_regions if region != "JEMI"] + ["JEMI"]
+            percentage_data = percentage_data[percentage_data["Region"].isin(selected_regions)]
+
+        # Pivot Data for Percentage Change Calculation
+        percentage_pivot = percentage_data.pivot_table(index="Year", columns="Region", values="Graduates", aggfunc="sum").fillna(0)
+
+        # Calculate Year-over-Year Percentage Change
+        percentage_change = percentage_pivot.pct_change().fillna(0) * 100
+
+        # Display Percentage Change Line Chart
+        st.line_chart(percentage_change)
+
+        # Display Data Table for Reference
+        st.write("### Göterim üýtgemegi Maglumatlary")
+        st.dataframe(percentage_change)
+
 
     with st.expander("Bap: ÝOM kwota seljermeleri (2015–2024)"):
         # Title for the dashboard
@@ -1933,52 +1967,74 @@ if page == "Quota":
             create_pie_chart(filtered_data, 'Uniwersitet', "Uniwersitet boýunça kwota paýlanyşy")
 
 
-
-
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
 
         st.write("### Derňemek üçin üýtgeýji saýlaň")
+
+# Primary group-by options
         group_by_options = ["Uniwersitet", "Ugur", "Welaýat", "Hünär", "Talyp görnüşi"]
-        selected_group_by = st.multiselect("Üýtgeýjileri saýlaň", options=group_by_options, default=["Uniwersitet"])
+        selected_group_by = st.selectbox("Üýtgeýji saýlaň", options=group_by_options, index=0)  # Default is 'Uniwersitet'
 
-        if selected_group_by:
-            # Aggregate Data
-            line_chart_data = filtered_data.groupby(["Ýyl"] + selected_group_by, as_index=False)['Kwota'].sum()
+        # Secondary filter based on selected group-by
+        unique_values = ["Ählisi"] + sorted(filtered_data[selected_group_by].unique())
+        selected_values = st.multiselect(f"{selected_group_by} boýunça saýlaň", options=unique_values, default="Ählisi")
+        # st.write(selected_values)
 
-            # Pivot Data for Line Chart
-            line_chart_pivot = line_chart_data.pivot_table(index="Ýyl", columns=selected_group_by, values="Kwota", aggfunc="sum").fillna(0)
+        # Apply secondary filter
+        filtered_chart_data = filtered_data.copy()
+        if "Ählisi" not in selected_values:
+            filtered_chart_data = filtered_chart_data[filtered_chart_data[selected_group_by].isin(selected_values)]
 
-            # Display Line Chart
-            st.write(f"### Kwota tendensiýasy - {', '.join(selected_group_by)}")
-            st.line_chart(line_chart_pivot)
-        else:
-            st.warning("Please select at least one variable to group by.")
+        # Aggregate Data
+        line_chart_data = filtered_chart_data.groupby(["Ýyl", selected_group_by], as_index=False)['Kwota'].sum()
 
+        # Pivot Data for Line Chart
+        line_chart_pivot = line_chart_data.pivot_table(index="Ýyl", columns=selected_group_by, values="Kwota", aggfunc="sum").fillna(0)
+
+        # Display Line Chart
+        st.write(f"### Kwota tendensiýasy - {selected_group_by}")
+        st.line_chart(line_chart_pivot)
 
         st.write("### Ýylyň dowamynda göterim üýtgemeginiň derňewi")
-        # Dynamic Grouping Variables
-        selected_group_by_pct = st.multiselect("Üýtgeýji saýlaň", options=group_by_options, default=["Uniwersitet"])
 
+        # Primary Group-by Options
+        group_by_options = ["Uniwersitet", "Ugur", "Welaýat", "Hünär", "Talyp görnüşi"]
+        selected_group_by_pct = st.selectbox("Üýtgeýji saýlaň ", options=group_by_options)
+
+        # Secondary Filter for the Selected Group
         if selected_group_by_pct:
+            unique_values_pct = ["ALL"] + sorted(filtered_data[selected_group_by_pct].unique())
+            selected_values_pct = st.multiselect(f"{selected_group_by_pct} boýunça saýlaň", options=unique_values_pct, default="ALL")
+
+            # Apply Secondary Filter
+            filtered_pct_data = filtered_data.copy()
+            if "ALL" not in selected_values_pct:
+                filtered_pct_data = filtered_pct_data[filtered_pct_data[selected_group_by_pct].isin(selected_values_pct)]
+
             # Aggregate Data for Quota
-            percentage_data = filtered_data.groupby(["Ýyl"] + selected_group_by_pct, as_index=False)['Kwota'].sum()
+            percentage_data = filtered_pct_data.groupby(["Ýyl", selected_group_by_pct], as_index=False)['Kwota'].sum()
 
             # Pivot Data for Percentage Change Calculation
-            percentage_pivot = percentage_data.pivot_table(index="Ýyl", columns=selected_group_by_pct, values="Ýyl", aggfunc="sum").fillna(0)
+            percentage_pivot = percentage_data.pivot_table(index="Ýyl", columns=selected_group_by_pct, values="Kwota", aggfunc="sum").fillna(0)
 
             # Calculate Year-over-Year Percentage Change
             percentage_change = percentage_pivot.pct_change().fillna(0) * 100
 
             # Display Percentage Change Line Chart
-            st.write(f"### Göterim üýtgemegi -  {', '.join(selected_group_by_pct)}")
+            st.write(f"### Göterim üýtgemegi -  {selected_group_by_pct}")
             st.line_chart(percentage_change)
 
             # Display Data Table for Reference
-            st.write("### Göterim üýtgemegi ")
+            st.write("### Göterim üýtgemegi Maglumatlary")
             st.dataframe(percentage_change)
         else:
-            st.warning("Please select at least one variable to group by.")
+            st.warning("Üýtgeýji saýlaň.")
+
+
+
+    
+
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
@@ -2191,8 +2247,8 @@ if page == "Quota":
         sankey_data = go.Sankey(
             node=dict(
                 pad=15,
-                thickness=20,
-                line=dict(color="black", width=0.5),
+                thickness=10,
+                line=dict(color="black", width=0.6),
                 label=nodes
             ),
             link=dict(
@@ -2323,7 +2379,65 @@ if page == "Quota":
         st.write("### Welaýat ara ahwat")
         st.dataframe(region_ahwat)
 
-        st.write("### Şseýlelikde jemi we welaýat ara kwota çaklamalary")
+        st.write("### Şeýlelikde jemi we welaýat ara kwota çaklamalary")
+
+        graduates_data.loc[
+            (graduates_data['Year'] > 2024) & (graduates_data['Region'] == 'JEMI'),
+            'Kwota'
+        ] = graduates_data.loc[graduates_data['Year'] > 2024, 'Graduates'] * 0.17020542993471177
+
+        for region in region_ahwat['Welaýat']:
+            graduates_data.loc[
+                (graduates_data['Year'] > 2024) & (graduates_data['Region'] == region),
+                'Kwota'
+            ] = (
+                graduates_data.loc[(graduates_data['Year'] > 2024) & (graduates_data['Region'] == region), 'Graduates'] *
+                (region_ahwat.loc[region_ahwat['Welaýat'] == region, 'AHWAT'].iloc[0] / 100)
+            )
+
+        graduates_data = graduates_data.dropna(subset=['Kwota'])
+
+        forecasted_quota = graduates_data[['Year', 'Region', 'Kwota']]
+        historical_quota = quota_data.groupby(['Ýyl', 'Welaýat'])['Kwota'].sum().reset_index()
+        historical_quota.rename(columns={'Ýyl': 'Year', 'Welaýat': 'Region'}, inplace=True)
+        combined_quota = pd.concat([historical_quota, forecasted_quota], ignore_index=True)
+
+        # Filter combined_quota for years between 2015 and 2024
+        filtered_quota = combined_quota[(combined_quota['Year'] >= 2015) & (combined_quota['Year'] <= 2024)]
+
+        # Calculate JEMI as the sum of Kwota for all regions per year
+        jemi_quota = filtered_quota.groupby('Year')['Kwota'].sum().reset_index()
+        jemi_quota['Region'] = 'JEMI'
+
+        # Append JEMI to the combined quota
+        combined_quota = pd.concat([combined_quota, jemi_quota], ignore_index=True)
+
+        # Display the updated combined quota
+        # st.write("### Combined Quota with JEMI (2015–2024)")
+        # st.dataframe(combined_quota)
+
+        # User Selection for Regions
+        regions = list(combined_quota['Region'].unique())
+        selected_regions = st.multiselect("Welaýat saýlaň", options=regions, default=["JEMI"])
+
+        # Filter data for selected regions
+        filtered_data = combined_quota[combined_quota['Region'].isin(selected_regions)]
+        filtered_data["Year"] = filtered_data["Year"].astype(str)
+
+
+        # Prepare data for line chart
+        line_chart_data = filtered_data.groupby(['Year', 'Region'])['Kwota'].sum().unstack().fillna(0)
+
+
+        # Plot line chart using Streamlit's built-in line chart functionality
+        st.write("### Ýyl boýunça kwota tendensiýasy")
+        st.line_chart(line_chart_data)
+
+        st.write("### Şeýlelikde jemi we uniwersitet ara kwota çaklamalary")
+
+
+
+
 
 
 
