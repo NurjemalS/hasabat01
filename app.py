@@ -1575,7 +1575,7 @@ if page == "Quota":
         st.title("Mekdep uçurymlarynyň seljermeleri (2015–2042)")
 
         # Load Data
-        graduates_data = pd.read_csv('restructured_school_graduates.csv')  # Replace with your restructured file
+        graduates_data = pd.read_csv('restructured_school_graduates_.csv')  # Replace with your restructured file
         graduates_data.fillna(0, inplace=True)
         graduates_data["Year"] = graduates_data["Year"].astype(str)
 
@@ -2347,7 +2347,7 @@ if page == "Quota":
         st.markdown("<br>", unsafe_allow_html=True)
 
         quota_data = pd.read_csv("Q_all_restructured_data.csv")  # Replace with your actual file
-        graduates_data = pd.read_csv("restructured_school_graduates.csv")  # Replace with your actual file
+        graduates_data = pd.read_csv("restructured_school_graduates_.csv")  # Replace with your actual file
      
         # Filter 2024 data
         quota_2024 = quota_data[quota_data['Ýyl'] == 2024]
