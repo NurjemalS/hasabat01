@@ -2414,7 +2414,7 @@ if page == "Quota":
 
         # Display the updated combined quota
         # st.write("### Combined Quota with JEMI (2015–2024)")
-        # st.dataframe(combined_quota)
+        st.dataframe(combined_quota)
 
         # User Selection for Regions
         regions = list(combined_quota['Region'].unique())
@@ -2423,6 +2423,8 @@ if page == "Quota":
         # Filter data for selected regions
         filtered_data = combined_quota[combined_quota['Region'].isin(selected_regions)]
         filtered_data["Year"] = filtered_data["Year"].astype(str)
+        st.dataframe(filtered_data)
+
 
 
         # Prepare data for line chart
