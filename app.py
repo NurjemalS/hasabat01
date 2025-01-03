@@ -2396,6 +2396,7 @@ if page == "Quota":
             )
 
         graduates_data = graduates_data.dropna(subset=['Kwota'])
+        st.dataframe(graduates_data)
 
         forecasted_quota = graduates_data[['Year', 'Region', 'Kwota']]
         historical_quota = quota_data.groupby(['Ýyl', 'Welaýat'])['Kwota'].sum().reset_index()
@@ -2431,99 +2432,99 @@ if page == "Quota":
         # Plot line chart using Streamlit's built-in line chart functionality
         st.line_chart(line_chart_data)
 
-#         st.write("### Şeýlelikde uniwersitet ara kwota çaklamalary")
+        st.write("### Şeýlelikde uniwersitet ara kwota çaklamalary")
 
-# # Calculate university distribution from 2024 quota data
-#         university_distribution = quota_2024.groupby('Uniwersitet')['Kwota'].sum()
-#         university_distribution = (university_distribution / university_distribution.sum()) * 100
+# Calculate university distribution from 2024 quota data
+        university_distribution = quota_2024.groupby('Uniwersitet')['Kwota'].sum()
+        university_distribution = (university_distribution / university_distribution.sum()) * 100
 
-#         # Initialize a DataFrame
-#         university_distribution = university_distribution.reset_index()
-#         university_distribution.columns = ['Uniwersitet', 'Distribution']
-#         st.write("Her uniwersitetiň kwotada paýy (2024)")
-#         st.dataframe(university_distribution)
+        # Initialize a DataFrame
+        university_distribution = university_distribution.reset_index()
+        university_distribution.columns = ['Uniwersitet', 'Distribution']
+        st.write("Her uniwersitetiň kwotada paýy (2024)")
+        st.dataframe(university_distribution)
 
-#         # Study type (Hünärmen vs Bakalawr) percentages for each university
-#         study_distribution = (
-#             quota_2024.groupby(['Uniwersitet', 'Hünär'])['Kwota'].sum() /
-#             quota_2024.groupby('Uniwersitet')['Kwota'].sum()
-#         ).reset_index()
+        # Study type (Hünärmen vs Bakalawr) percentages for each university
+        study_distribution = (
+            quota_2024.groupby(['Uniwersitet', 'Hünär'])['Kwota'].sum() /
+            quota_2024.groupby('Uniwersitet')['Kwota'].sum()
+        ).reset_index()
 
-#         # Rename columns for clarity
-#         study_distribution.rename(columns={'Kwota': 'Percentage'}, inplace=True)
+        # Rename columns for clarity
+        study_distribution.rename(columns={'Kwota': 'Percentage'}, inplace=True)
 
-#         # Display the updated DataFrame
-#         # st.dataframe(study_distribution)
+        # Display the updated DataFrame
+        # st.dataframe(study_distribution)
 
-#        # Step 1: Get 2024 university distribution
+       # Step 1: Get 2024 university distribution
 
-#        # Filter data for years after 2024 and Region "JEMI"
-#         combined_quota["Year"] = pd.to_numeric(combined_quota["Year"], errors="coerce")
+       # Filter data for years after 2024 and Region "JEMI"
+        combined_quota["Year"] = pd.to_numeric(combined_quota["Year"], errors="coerce")
 
-#         # Filter data for years after 2024 and region 'JEMI'
-#         combined_quota = combined_quota[(combined_quota['Year'] > 2024) & (combined_quota['Region'] == 'JEMI')]
+        # Filter data for years after 2024 and region 'JEMI'
+        combined_quota = combined_quota[(combined_quota['Year'] > 2024) & (combined_quota['Region'] == 'JEMI')]
 
-#         # Add university distribution to filtered_data
-#         combined_quota = combined_quota.assign(key=1)  # Add a temporary key for cross join
-#         university_distribution = university_distribution.assign(key=1)
+        # Add university distribution to filtered_data
+        combined_quota = combined_quota.assign(key=1)  # Add a temporary key for cross join
+        university_distribution = university_distribution.assign(key=1)
 
-#         university_quota = pd.merge(combined_quota, university_distribution, on='key').drop(columns='key')
+        university_quota = pd.merge(combined_quota, university_distribution, on='key').drop(columns='key')
 
-#         # Calculate university quota
-#         university_quota['University_Kwota'] = university_quota['Kwota'] * (university_quota['Distribution'] / 100)
+        # Calculate university quota
+        university_quota['University_Kwota'] = university_quota['Kwota'] * (university_quota['Distribution'] / 100)
 
-#         # Merge with study distribution to split into Hünärmen and Bakalawr
-#         study_distribution = study_distribution.rename(columns={'Uniwersitet': 'University'})  # Ensure consistent naming
-#         final_data = pd.merge(university_quota, study_distribution, left_on='Uniwersitet', right_on='University', how='inner')
+        # Merge with study distribution to split into Hünärmen and Bakalawr
+        study_distribution = study_distribution.rename(columns={'Uniwersitet': 'University'})  # Ensure consistent naming
+        final_data = pd.merge(university_quota, study_distribution, left_on='Uniwersitet', right_on='University', how='inner')
 
-#         # Calculate study type quota
-#         final_data['Study_Type_Kwota'] = final_data['University_Kwota'] * (final_data['Percentage'])
-#         # st.dataframe(final_data)
+        # Calculate study type quota
+        final_data['Study_Type_Kwota'] = final_data['University_Kwota'] * (final_data['Percentage'])
+        # st.dataframe(final_data)
 
-#         # Filter historical data for years 2015-2024
-#         historical_data = quota_data[(quota_data['Ýyl'] >= 2015) & (quota_data['Ýyl'] <= 2024)]
+        # Filter historical data for years 2015-2024
+        historical_data = quota_data[(quota_data['Ýyl'] >= 2015) & (quota_data['Ýyl'] <= 2024)]
 
-#         # Group by year, university, and study type for historical data
-#         historical_grouped = historical_data.groupby(['Ýyl', 'Uniwersitet', 'Hünär'])['Kwota'].sum().reset_index()
-#         historical_grouped.rename(columns={'Ýyl': 'Year', 'Kwota': 'Quota'}, inplace=True)
+        # Group by year, university, and study type for historical data
+        historical_grouped = historical_data.groupby(['Ýyl', 'Uniwersitet', 'Hünär'])['Kwota'].sum().reset_index()
+        historical_grouped.rename(columns={'Ýyl': 'Year', 'Kwota': 'Quota'}, inplace=True)
 
-#         # Add JEMI (all universities combined) for historical data
-#         jemi_historical = historical_grouped.groupby(['Year', 'Hünär'])['Quota'].sum().reset_index()
-#         jemi_historical['Uniwersitet'] = 'JEMI'
-#         historical_grouped = pd.concat([historical_grouped, jemi_historical], ignore_index=True)
+        # Add JEMI (all universities combined) for historical data
+        jemi_historical = historical_grouped.groupby(['Year', 'Hünär'])['Quota'].sum().reset_index()
+        jemi_historical['Uniwersitet'] = 'JEMI'
+        historical_grouped = pd.concat([historical_grouped, jemi_historical], ignore_index=True)
 
 
-#         # Combine historical and forecasted data
-#         combined_data = pd.concat([historical_grouped, final_data], ignore_index=True)
-#         combined_data["Year"] = combined_data["Year"].astype(str)
-#         combined_data['Combined_Quota'] = combined_data['Quota'].combine_first(combined_data['Study_Type_Kwota'])
-#         combined_data = combined_data[combined_data['Uniwersitet'] != 'JEMI']
+        # Combine historical and forecasted data
+        combined_data = pd.concat([historical_grouped, final_data], ignore_index=True)
+        combined_data["Year"] = combined_data["Year"].astype(str)
+        combined_data['Combined_Quota'] = combined_data['Quota'].combine_first(combined_data['Study_Type_Kwota'])
+        combined_data = combined_data[combined_data['Uniwersitet'] != 'JEMI']
 
-#         # st.dataframe(combined_data)
+        # st.dataframe(combined_data)
 
-#         # Multiselect for universities, including 'JEMI'
-#         all_universities = list(combined_data['Uniwersitet'].unique())
-#         all_universities.insert(0, "Ählisi")        
-#         selected_universities = st.multiselect("Uniwersitet saýlaň", options=all_universities, default="Ählisi")
+        # Multiselect for universities, including 'JEMI'
+        all_universities = list(combined_data['Uniwersitet'].unique())
+        all_universities.insert(0, "Ählisi")        
+        selected_universities = st.multiselect("Uniwersitet saýlaň", options=all_universities, default="Ählisi")
 
-#         if "Ählisi" in selected_universities:
-#             filtered_data = combined_data.copy()  # Select all data if "ALL" is chosen
-#         else:
-#             filtered_data = combined_data[combined_data['Uniwersitet'].isin(selected_universities)]
+        if "Ählisi" in selected_universities:
+            filtered_data = combined_data.copy()  # Select all data if "ALL" is chosen
+        else:
+            filtered_data = combined_data[combined_data['Uniwersitet'].isin(selected_universities)]
         
-#         # Radio buttons for study type
-#         study_type = st.radio("Hünär saýlaň", options=['Hünärmen', 'Bakalawr', 'Ikisem'])
+        # Radio buttons for study type
+        study_type = st.radio("Hünär saýlaň", options=['Hünärmen', 'Bakalawr', 'Ikisem'])
 
-#         # Filter combined data based on user selection
-#         if study_type != 'Ikisem':
-#             filtered_data = filtered_data[filtered_data['Hünär'] == study_type]
+        # Filter combined data based on user selection
+        if study_type != 'Ikisem':
+            filtered_data = filtered_data[filtered_data['Hünär'] == study_type]
         
 
-#         # Pivot data for line chart
-#         pivot_data = filtered_data.pivot_table(index='Year', columns='Uniwersitet', values='Combined_Quota', aggfunc='sum').fillna(0)
+        # Pivot data for line chart
+        pivot_data = filtered_data.pivot_table(index='Year', columns='Uniwersitet', values='Combined_Quota', aggfunc='sum').fillna(0)
         
-#         # Plot line chart using Streamlit
-#         st.line_chart(pivot_data)
+        # Plot line chart using Streamlit
+        st.line_chart(pivot_data)
 
 
 
