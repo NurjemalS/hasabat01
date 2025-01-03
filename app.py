@@ -2396,7 +2396,6 @@ if page == "Quota":
             )
 
         graduates_data = graduates_data.dropna(subset=['Kwota'])
-        st.dataframe(graduates_data)
 
         forecasted_quota = graduates_data[['Year', 'Region', 'Kwota']]
         historical_quota = quota_data.groupby(['Ýyl', 'Welaýat'])['Kwota'].sum().reset_index()
@@ -2415,7 +2414,6 @@ if page == "Quota":
 
         # Display the updated combined quota
         # st.write("### Combined Quota with JEMI (2015–2024)")
-        st.dataframe(combined_quota)
 
         # User Selection for Regions
         regions = list(combined_quota['Region'].unique())
