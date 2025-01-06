@@ -52,6 +52,7 @@ st.sidebar.title("Nawigasiýa")
 		
 page = st.sidebar.radio("Kategoriýa saýlaň", [
     "Quota", 
+    "Bazar", 
     # "Hünärler",
     # "Hümarmen ugurlar",
     # "Bakalawr ugurlar",
@@ -510,8 +511,8 @@ if page == "Hyzmatdaşlyklar":
             {"code": "B12", "name": "Brest döwlet tehniki uniwersiteti"},
             {"code": "B13", "name": "P.O. Suhoý adyndaky Gomel döwlet tehniki uniwersiteti"},
             {"code": "B14", "name": "Belorus döwlet uniwersiteti"},
-            {"code": "B15", "name": "Belorus unknown15 uniwersiteti"},
-            {"code": "B16", "name": "Belorus unknown16 uniwersiteti"}
+            {"code": "B15", "name": "Belarus döwlet informatika we radioelektronika uniwersiteti"},
+            {"code": "B16", "name": "Belarus döwlet aragatnaşyk akademiýasy"}
 
         ],
         "DEU": [
@@ -2523,6 +2524,78 @@ if page == "Quota":
         # Plot line chart using Streamlit
         st.line_chart(pivot_data)
 
+if page == "Bazar":
+    st.title("Türkmenistanda bazar ykdysadyýeti barada maglumatlar")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.write("### Bazar ykdysadyýeti")
+
+        # Load Data
+    df = pd.read_csv('bazar_intro.csv')  # Replace with your restructured file
+    df["Ýyl"] = df["Ýyl"].astype(str)
+
+
+    # Calculate percentage increase for each variable
+    df["Zähmete ukyply ýaşdaky ilatyň sany %"] = df["Zähmete ukyply ýaşdaky ilatyň sany"].pct_change() * 100
+    df["Ykdysady taýdan işjeň ilatynyň sany %"] = df["Ykdysady taýdan işjeň ilatynyň sany"].pct_change() * 100
+
+    # Display the data
+    st.dataframe(df)
+
+    # Streamlit bar chart for population distribution
+    st.write("### Ilat paýlanyşy")
+    bar_data = df.set_index("Ýyl")[["Zähmete ukyply ýaşdaky ilatyň sany", "Ykdysady taýdan işjeň ilatynyň sany"]]
+    st.bar_chart(bar_data)
+
+
+
+    bazar_df = pd.read_csv('data_bazar2015.csv')  # Replace with your restructured file
+    bazar_df["Year"] = bazar_df["Year"].astype(str)
+
+    # Streamlit UI
+
+    # Step 1: State Selection
+    state = st.radio("Döwlet saýlaň", options=bazar_df["State"].unique(), horizontal=True)
+
+    if state == "JEMI":
+    # Include all variables regardless of state
+        variables_to_include = bazar_df["Variable"].unique()
+    else:
+        # Include variables specific to the selected state
+        variables_to_include = bazar_df[bazar_df["State"] == state]["Variable"].unique()
+
+        # Step 2: Ugur and Variable Selection
+    selected_ugurs = st.multiselect("Ugur saýlaň", options=bazar_df["Ugur"].unique(), default=["Jemi"])
+    selected_variables = st.multiselect("Üýtgeýän ululyk saýlaň", options=variables_to_include, default=list(variables_to_include))
+
+    # Filter Data by Ugur and Variable
+    filtered_data = bazar_df[(bazar_df["Ugur"].isin(selected_ugurs)) & (bazar_df["Variable"].isin(selected_variables))]
+
+    # Step 3: Visualization
+    # st.write("### Filtered Data Table")
+    # st.dataframe(filtered_data)
+
+    # Group by Year for Visualization
+    grouped_data = filtered_data.groupby(["Year", "Variable"])["Value"].sum().unstack()
+
+    # Bar Chart
+    st.write("### Ýyllaryň dowamynda üýtgeýän ululyk")
+    st.bar_chart(grouped_data)
+
+    # Line Chart
+    st.write("### Ýyllaryň dowamyndaky tendensiyasy")
+    st.line_chart(grouped_data)
+
+        # Calculate Percentage Change Year-over-Year
+    grouped_data_percentage = grouped_data.pct_change() * 100
+
+    # Replace NaN or infinite values (e.g., for first year) with 0
+    grouped_data_percentage = grouped_data_percentage.fillna(0)
+
+    # Line Chart Showing Percentage Change
+    st.write("### Göterim üýtgemegi ")
+    st.line_chart(grouped_data_percentage)
 
 
 
