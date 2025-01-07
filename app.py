@@ -8,6 +8,8 @@ from sklearn.linear_model import LinearRegression
 import plotly.express as px  # Ensure this import is included
 from math import pi
 import plotly.graph_objects as go
+import altair as alt
+
 
 
 
@@ -2537,8 +2539,8 @@ if page == "Bazar":
 
 
     # Calculate percentage increase for each variable
-    df["Zähmete ukyply ýaşdaky ilatyň sany %"] = df["Zähmete ukyply ýaşdaky ilatyň sany"].pct_change() * 100
-    df["Ykdysady taýdan işjeň ilatynyň sany %"] = df["Ykdysady taýdan işjeň ilatynyň sany"].pct_change() * 100
+    df["Zähmete ukyply ýaşdaky ilatyň sanynyň öňki görkezijä görä tapawudy, göterimde %"] = df["Zähmete ukyply ýaşdaky ilatyň sany"].pct_change() * 100
+    df["Ykdysady taýdan işjeň ilatynyň sanynyň öňki görkezijä görä tapawudy, göterimde %"] = df["Ykdysady taýdan işjeň ilatynyň sany"].pct_change() * 100
 
     # Display the data
     st.dataframe(df)
@@ -2552,6 +2554,8 @@ if page == "Bazar":
 
     bazar_df = pd.read_csv('data_bazar2015.csv')  # Replace with your restructured file
     bazar_df["Year"] = bazar_df["Year"].astype(str)
+    bazar_df = bazar_df[bazar_df["Variable"] != "Ý.B. Işgärler göterimde %"]
+    bazar_df = bazar_df[bazar_df["Variable"] != "Ugurlar boýunça Ý.B. Işgärler göterimde %"]
 
     # Streamlit UI
 
@@ -2581,12 +2585,30 @@ if page == "Bazar":
 
     # Bar Chart
     st.write("### Ýyllaryň dowamynda üýtgeýän ululyk")
-    st.bar_chart(grouped_data)
+    # st.bar_chart(grouped_data)
 
-    # Line Chart
-    st.write("### Ýyllaryň dowamyndaky tendensiyasy")
-    st.line_chart(grouped_data)
+    if not filtered_data.empty:
+        # Reset index for easier manipulation
+        filtered_data_reset = filtered_data.reset_index()
 
+        # Create a grouped bar chart for selected variables
+        fig = px.bar(
+            filtered_data_reset,
+            x="Year",  # X-axis for years
+            y="Value",  # Y-axis for values
+            color="Variable",  # Color-coded by variable
+            barmode="group",  # Grouped bars for each year
+            title="",
+            labels={"Year": "Ýyllar", "Value": "Value", "Variable": "Üýtgeýän ululyk"},
+            height=600,
+        )
+
+        # Display the chart
+        st.plotly_chart(fig)
+    else:
+        st.write("No data available for the selected criteria.")
+
+  
         # Calculate Percentage Change Year-over-Year
     grouped_data_percentage = grouped_data.pct_change() * 100
 
