@@ -1837,7 +1837,7 @@ if page == "Quota":
         # st.write("### Filtered Data", filtered_data)
 
         university_coords = pd.DataFrame({
-                    'Uniwersitet': ['TDU', 'HYYÖU', 'HNGU', 'TDBGI', 'TDLU', 'TDBSI', 'HGI', 'TDMaI', 'TDYDI', 'TTII', 'TMDDI', 'TITU', 'TITUKI', 'TOHU', 'TDMI', 'TMK', 'TDÇA', 'SSTDMI', 'TDEI', 'TOHI', 'HAA'],
+                    'Uniwersitet': ['TDU', 'HYYÖU', 'HNGU', 'TDBGI', 'TDLU', 'TDBSI', 'HGI', 'TDMal', 'TDYDI', 'TTII', 'TMDDI', 'TITU', 'TITUKI', 'TOHU', 'TDMI', 'TMK', 'TDÇA', 'SSTDMI', 'TDEI', 'TOHI', 'HAA'],
                     'Latitude': [37.9308047, 37.9311669, 37.877472, 37.9242034, 37.8784063, 37.9187744, 37.9293351, 37.9211045, 37.8998289, 37.9420864, 37.9507819, 37.9612627, 38.0434327, 37.9526083, 37.8962383, 37.9373864, 37.936482, 39.0885626, 37.2584823, 41.8280269, 38.0550484],
                     'Longitude': [58.3848102, 58.3876358, 58.3861546, 58.4254617, 58.3641239, 58.3764255, 58.3887706, 58.3903317, 58.362772, 58.3784814, 58.3526043, 58.3246639, 58.1660508, 58.3420542, 58.3656084, 58.3801838, 58.3695422, 63.5794743, 62.3403715, 59.9348195, 58.047581]
                 })
@@ -2618,17 +2618,6 @@ if page == "Bazar":
     # Line Chart Showing Percentage Change
     st.write("### Göterim üýtgemegi ")
     st.line_chart(grouped_data_percentage)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
