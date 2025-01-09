@@ -53,7 +53,7 @@ st.sidebar.title("Nawigasiýa")
 
 		
 page = st.sidebar.radio("Kategoriýa saýlaň", [
-    "Quota", 
+    "Kwota", 
     "Bazar", 
     # "Hünärler",
     # "Hümarmen ugurlar",
@@ -1567,7 +1567,7 @@ if page ==  "Maddy enjamlaýyn üpjünçilik":
     # Use Streamlit's bar chart to visualize
     st.bar_chart(percentage_contribution)
 
-if page == "Quota":
+if page == "Kwota":
     st.title("Türkmenistanda ýokary bilimi ösdürmegiň Strategiýasyny taýýarlamak üçin MAGLUMATLAR")
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1640,7 +1640,7 @@ if page == "Quota":
                     # Plot pie chart
                     plt.figure(figsize=(18, 8))
                     plt.pie(distribution_percentages, labels=distribution_percentages.index, autopct='%1.1f%%',
-                            startangle=140, colors=["#f59393", "#87cefa", "#f2f277", "#90ee90", "#ffcccb", "#aaffc3"],
+                            startangle=140, colors=["#f59393", "#87cefa", "#f2f277", "#90ee90", "#ffcccb", "#aaffc3", "#f2de8d"],
                             textprops={"fontsize": 20})
                     st.pyplot(plt)
 
@@ -2785,11 +2785,217 @@ if page == "Bazar":
             st.plotly_chart(fig_line)
         else:
             st.write("No JEMI data available for selected criteria.")
+        
+
+        # Step 1: Ugur Selection
+        selected_ugurs = st.multiselect(
+            "Ugur saýlaň  ",
+            options=bazar_df["Ugur"].unique(),
+            default=["Jemi"]  # Default to overall "Jemi"
+        )
+
+        filtered_data = bazar_df[
+        (bazar_df["Ugur"].isin(selected_ugurs)) &
+        (bazar_df["Variable"] == "Ý.B. Işgärleriň sany")
+        ]
 
 
+        # Pivot Data for Visualization
+        pivot_data = filtered_data.pivot_table(
+            index=["Year", "Ugur"],
+            columns="State",
+            values="Value",
+            aggfunc="sum"
+        ).reset_index()
+
+        # Melt the data for Plotly compatibility
+        melted_data = pivot_data.melt(
+            id_vars=["Year", "Ugur"],
+            value_vars=["Döwlet", "Döwlet dahylsyz"],
+            var_name="State",
+            value_name="Value"
+        )
+
+        # Visualization: Single Line Chart
+        st.write("### Ugurlar boýunça döwlet we döwlete dahylsyz Ý.B. işgärleriň tendensiýasy")
+        if not melted_data.empty:
+            # Use Plotly for a combined line chart
+            fig = px.line(
+                melted_data,
+                x="Year",
+                y="Value",
+                color="State",
+                line_group="Ugur",
+                title="",
+                labels={"Value": "Ý.B. Işgärler", "Year": "Ýyl", "State": "Döwlet:"},
+                height=600
+            )
+            st.plotly_chart(fig)
+        else:
+            st.write("No data available for the selected criteria.")
+
+    with st.expander("ÝOM tamamlanlaryň seljermesi"):
+        # Filter data for relevant variables
+        graduate_data = bazar_df[bazar_df["Variable"].isin(["Daşary ýurdy tamamlap ykrar edilenler", "ÝOM tamamlanlar"])]
+
+        # Pivot data for analysis
+        pivot_data = graduate_data.pivot_table(
+            index=["Year", "Ugur"],
+            columns="Variable",
+            values="Value",
+            aggfunc="sum"
+        ).reset_index()
+
+        # Melt data for Plotly compatibility
+        melted_data = pivot_data.melt(
+            id_vars=["Year", "Ugur"],
+            value_vars=["Daşary ýurdy tamamlap ykrar edilenler", "ÝOM tamamlanlar"],
+            var_name="Graduate Type",
+            value_name="Count"
+        )
+
+        # Streamlit UI
+        st.write(" ### ÝOM tamamlanlaryň seljermesi")
+
+        # Step 1: Sector Selection
+        selected_ugurs = st.multiselect(
+            "Ugur saýlaň   ",
+            options=bazar_df["Ugur"].unique(),
+            default="Jemi"
+        )
 
 
+        # Filter data based on selected sectors and years
+        filtered_data = melted_data[
+            (melted_data["Ugur"].isin(selected_ugurs)) 
+        ]
 
+        # Ensure data exists
+        if filtered_data.empty:
+            st.write("No data available for the selected sectors and years.")
+        else:
+            # 1. Line Chart: Trends Over Time
+            st.write("###  Ugurlar boýunça ÝOM tamamlanlaryň we Daşary ýurdy tamamlap ykrar edenleriň tendensiýasy")
+            fig_line = px.line(
+                filtered_data,
+                x="Year",
+                y="Count",
+                color="Graduate Type",
+                line_group="Ugur",
+                title="",
+                labels={"Year": "Ýyl", "Count": "ÝOM tamamlan talyp sany", "Graduate Type": "ÝOM tamamlanlaryň görnüşi"},
+                height=600
+            )
+            st.plotly_chart(fig_line)
+
+
+            # Percentage Change: Dynamic Line Chart
+            st.write("### Ugurlar boýunça göterim üýtgemeler tendensiýasy")
+
+            # Calculate Percentage Change for Each Ugur
+            percentage_data = filtered_data.groupby(["Year", "Graduate Type", "Ugur"], as_index=False)["Count"].sum()
+
+            # Filter based on selected Ugurs
+            selected_ugurs_for_percentage = st.multiselect(
+                "Saýlanan ugurlardan ugur saýlaň",
+                options=filtered_data["Ugur"].unique(),
+                default=filtered_data["Ugur"].unique()
+            )
+
+            # Only include selected Ugurs for percentage change
+            percentage_data = percentage_data[percentage_data["Ugur"].isin(selected_ugurs_for_percentage)]
+
+            # Pivot data for percentage change calculation
+            percentage_pivot = percentage_data.pivot_table(
+                index=["Year", "Ugur"],
+                columns="Graduate Type",
+                values="Count",
+                aggfunc="sum"
+            ).fillna(0)
+
+            # Calculate year-over-year percentage change for each Ugur
+            percentage_change_data = []
+            for ugur in selected_ugurs_for_percentage:
+                ugur_data = percentage_pivot.xs(ugur, level="Ugur").pct_change().fillna(0) * 100
+                ugur_data = ugur_data.reset_index()
+                ugur_data["Ugur"] = ugur  # Add Ugur as a column
+                percentage_change_data.append(ugur_data)
+
+            # Combine all percentage change data
+            combined_percentage_data = pd.concat(percentage_change_data, ignore_index=True)
+
+            # Melt data for Plotly compatibility
+            melted_percentage = combined_percentage_data.melt(
+                id_vars=["Year", "Ugur"],
+                var_name="Graduate Type",
+                value_name="Percentage Change"
+            )
+
+            # Line Chart for Percentage Change
+            fig_percentage = px.line(
+                melted_percentage,
+                x="Year",
+                y="Percentage Change",
+                color="Graduate Type",
+                line_group="Ugur",
+                title="",
+                labels={"Year": "Ýyl", "Percentage Change": "Göterim üýtgemesi", "Graduate Type": "ÝOM tamamlanlaryň görnüşi"},
+                height=600
+            )
+            st.plotly_chart(fig_percentage)
+
+           
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # 2. Grouped Bar Chart: Comparison by Sector and Year
+                st.write("###  ÝOM tamamlanlaryň we Daşary ýurdy tamamlap ykrar edenleriň deňeşdirmesi ")
+                fig_bar = px.bar(
+                    filtered_data,
+                    x="Year",  # X-axis for years
+                    y="Count",  # Y-axis for graduate counts
+                    color="Graduate Type",  # Color-coded by type of graduate
+                    barmode="group",  # Grouped bars for each year
+                    facet_col="Ugur",  # Separate columns for each sector
+                    title="",
+                    labels={"Year": "Ýyl", "Count": "ÝOM tamamlanlaryň sany", "Graduate Type": "ÝOM tamamlanlaryň görnüşi"},
+                    height=800
+                )
+
+                # Update layout to set xaxis_type as category for all subplots
+                facet_axes = [f"xaxis{i+1}" for i in range(len(filtered_data["Ugur"].unique()))]  # Generate axis names dynamically
+                for axis in facet_axes:
+                    if axis in fig_bar.layout:
+                        fig_bar.layout[axis].type = "category"  # Ensure x-axis is treated as a category
+
+                st.plotly_chart(fig_bar)
+
+
+            with col2:
+                st.write("### ÝOM tamamlanlaryň we Daşary ýurdy tamamlap ykrar edenleriň göterim paýy ")
+
+                # Calculate percentage distribution for each year
+                percentage_data = filtered_data.groupby(["Year", "Graduate Type"])["Count"].sum().reset_index()
+                total_per_year = percentage_data.groupby("Year")["Count"].sum().reset_index().rename(columns={"Count": "Total"})
+                percentage_data = percentage_data.merge(total_per_year, on="Year")
+                percentage_data["Percentage"] = (percentage_data["Count"] / percentage_data["Total"]) * 100
+
+                # Create stacked bar chart
+                fig_stacked_bar = px.bar(
+                    percentage_data,
+                    x="Year",
+                    y="Percentage",
+                    color="Graduate Type",
+                    barmode="stack",
+                    title="",
+                    labels={"Year": "Ýyl", "Percentage": "ÝOM tamamlanlaryň göterim paýy", "Graduate Type": "ÝOM tamamlanlaryň görnüşi"},
+                    height=600
+                )
+
+                fig_stacked_bar.update_layout(xaxis_type="category")
+
+                st.plotly_chart(fig_stacked_bar)
 
 # problem ds yurt kop:
 # tolegli kop
