@@ -2548,7 +2548,24 @@ if page == "Bazar":
     # Streamlit bar chart for population distribution
     st.write("### Ilat paýlanyşy")
     bar_data = df.set_index("Ýyl")[["Zähmete ukyply ýaşdaky ilatyň sany", "Ykdysady taýdan işjeň ilatynyň sany"]]
-    st.bar_chart(bar_data)
+    # st.bar_chart(bar_data)
+    bar_data = df.set_index("Ýyl")[["Zähmete ukyply ýaşdaky ilatyň sany", "Ykdysady taýdan işjeň ilatynyň sany"]].reset_index()
+
+    # Using Plotly for a grouped bar chart
+    fig = px.bar(
+        bar_data,
+        x="Ýyl",  # X-axis for years
+        y=["Zähmete ukyply ýaşdaky ilatyň sany", "Ykdysady taýdan işjeň ilatynyň sany"],  # Variables for grouped bars
+        barmode="group",  # Grouped bars
+        title="Ilat Paýlanyşy (Grouped Bar Chart)",
+        labels={"value": "Sany", "variable": "Ululyklar", "Ýyl": "Ýyllar"},  # Custom labels
+        height=600
+    )
+    # Set the x-axis to category to ensure only present years are shown
+    fig.update_layout(xaxis_type="category")
+
+    # Display the chart in Streamlit
+    st.plotly_chart(fig)
 
 
 
@@ -2602,7 +2619,7 @@ if page == "Bazar":
             labels={"Year": "Ýyllar", "Value": "Value", "Variable": "Üýtgeýän ululyk"},
             height=600,
         )
-
+        fig.update_layout(xaxis_type="category")
         # Display the chart
         st.plotly_chart(fig)
     else:
@@ -2619,6 +2636,155 @@ if page == "Bazar":
     st.write("### Göterim üýtgemegi ")
     st.line_chart(grouped_data_percentage)
 
+    with st.expander("Ý.B. Işgärleriň seljermesi"):
+        st.write("### Ý.B. Işgärleriň seljermesi")
+
+        # Load Data
+        bazar_df = pd.read_csv('data_bazar2015.csv')
+        bazar_df["Year"] = bazar_df["Year"].astype(str)
+        bazar_df = bazar_df[bazar_df["Variable"] != "Ý.B. Işgärler göterimde %"]
+        bazar_df = bazar_df[bazar_df["Variable"] != "Ugurlar boýunça Ý.B. Işgärler göterimde %"]
+
+
+
+        # Step 1: State Selection
+        state = st.radio("Döwlet saýlaň ", options=bazar_df["State"].unique(), horizontal=True)
+
+        # Step 2: Year Selection
+        selected_years = st.multiselect(
+            "Ýyllary saýlaň", 
+            options=bazar_df["Year"].unique(), 
+            default=bazar_df["Year"].unique()
+        )
+
+        # Filter data for the selected state and years
+        state_data = bazar_df[
+            (bazar_df["State"] == state) & 
+            (bazar_df["Year"].isin(selected_years))
+        ]
+
+        # Filter only for "Ý.B. Işgärleriň sany" and "Işgärleriň sany" variables
+        filtered_state_data = state_data[state_data["Variable"].isin(["Ý.B. Işgärleriň sany", "Işgärleriň sany"])]
+
+        # Pivot Data for Analysis
+        pivot_data = filtered_state_data.pivot_table(
+            index=["Ugur", "Year"],
+            columns="Variable",
+            values="Value",
+            aggfunc="sum"
+        ).reset_index()
+
+        # Drop rows where total workers are NaN or 0
+        pivot_data = pivot_data.dropna(subset=["Işgärleriň sany"])
+        pivot_data = pivot_data[pivot_data["Işgärleriň sany"] > 0]
+
+        # Calculate Higher Education Percentage
+        pivot_data["YB_Percentage"] = (pivot_data["Ý.B. Işgärleriň sany"] / pivot_data["Işgärleriň sany"]) * 100
+
+        # --- Overall Distribution for JEMI ---
+        # Filter data for JEMI Ugur
+        jemi_data = pivot_data[pivot_data["Ugur"] == "Jemi"]
+
+        # Visualization 1: Overall Distribution (JEMI)
+        st.write("### Ý.B. Işgärleriň paýlanyşy")
+        if not jemi_data.empty:
+            total_yb = jemi_data["Ý.B. Işgärleriň sany"].sum()
+            total_workers = jemi_data["Işgärleriň sany"].sum()
+            pie_data = pd.DataFrame({
+                "Category": ["Ý.B. Işgärler", "Işgärleriň"],
+                "Value": [total_yb, total_workers - total_yb]
+            })
+
+            fig_pie1 = px.pie(
+                pie_data,
+                names="Category",
+                values="Value",
+                title=f"Ý.B. Işgärleriň paýlanyşy - {', '.join(selected_years)}",
+                labels={"Category": "Category", "Value": "Value"},
+                height=600
+            )
+            st.plotly_chart(fig_pie1)
+        else:
+            st.write("No data available for the selected criteria.")
+
+        # --- Detailed Ugur Breakdown ---
+        # Filter data for higher-educated workers
+
+        filtered_pivot_data = pivot_data[pivot_data["Ugur"] != "Jemi"]  # Exclude "Jemi" for sector-wise analysis
+
+        # Calculate the total higher-educated workers from the filtered data
+        total_yb_filtered = filtered_pivot_data["Ý.B. Işgärleriň sany"].sum()
+
+        # Calculate percentage distribution for each sector
+        filtered_pivot_data["Percentage"] = (
+            filtered_pivot_data["Ý.B. Işgärleriň sany"] / total_yb_filtered
+        ) * 100
+
+        # Visualization: Pie Chart for Higher-Educated Workers Distribution Across Sectors
+        st.write("### Ý.B. Işgärleriň ugurlar boýunça paýlanyşy")
+        if not filtered_pivot_data.empty:
+            fig_pie_filtered = px.pie(
+                filtered_pivot_data,
+                names="Ugur",
+                values="Percentage",
+                title="Ý.B. Işgärleriň ugurlar boýunça paýlanyşy",
+                labels={"Ugur": "Sector", "Percentage": "Percentage (%)"},
+                height=600
+            )
+            st.plotly_chart(fig_pie_filtered)
+        else:
+            st.write("No data available for the selected criteria.")
+
+        st.write("### Ugurlar boýunça Ý.B. işgärler")
+        sector_data = filtered_state_data.pivot_table(
+            index=["Ugur", "Year"],
+            columns="Variable",
+            values="Value",
+            aggfunc="sum"
+        ).reset_index()
+
+        # Drop rows where total workers are NaN or 0
+        sector_data = sector_data.dropna(subset=["Işgärleriň sany"])
+        sector_data = sector_data[sector_data["Işgärleriň sany"] > 0]
+
+        # Calculate Higher Education Percentage for Each Sector
+        sector_data["YB_Percentage"] = (sector_data["Ý.B. Işgärleriň sany"] / sector_data["Işgärleriň sany"]) * 100
+
+        # Group by Sector to calculate the mean percentage across selected years
+        sector_distribution = sector_data.groupby("Ugur")["YB_Percentage"].mean().reset_index()
+        # Visualization 2: Detailed Ugur Breakdown
+        if not sector_data.empty:
+            fig_bar = px.bar(
+                sector_data,
+                x="Ugur",
+                y="YB_Percentage",
+                color="Year",
+                barmode="group",
+                title="Ugurlar boýunça Ý.B. işgärler göterimde %",
+                labels={"YB_Percentage": "Göterimde (%)", "Ugur": "Ugur", "Year": "Ýyl"},
+                height=600
+            )
+            st.plotly_chart(fig_bar)
+        else:
+            st.write("No sector data available for the selected criteria.")
+
+
+        # --- Additional Visualization: Line Chart for JEMI Trend ---
+        st.write("### Ý.B. işgärler göterimde ýyllar boýunça tendensiýasy")
+        if not jemi_data.empty:
+            jemi_trend = jemi_data.groupby("Year")["YB_Percentage"].mean().reset_index()
+
+            fig_line = px.line(
+                jemi_trend,
+                x="Year",
+                y="YB_Percentage",
+                title="",
+                labels={"YB_Percentage": "Göterimde (%)", "Year": "Ýyl"},
+                height=600
+            )
+            st.plotly_chart(fig_line)
+        else:
+            st.write("No JEMI data available for selected criteria.")
 
 
 
