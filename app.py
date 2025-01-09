@@ -1933,21 +1933,24 @@ if page == "Kwota":
 
 
         # Create a reusable pie chart function
-        def create_pie_chart(data, group_by, title):
-            grouped_data = data.groupby(group_by)['Kwota'].sum()
-            percentages = (grouped_data / grouped_data.sum()) * 100
 
-            # Plot
-            fig, ax = plt.subplots(figsize=(8, 6))
-            ax.pie(
-                percentages,
-                labels=percentages.index,
-                autopct='%1.1f%%',
-                startangle=140,
-                colors=["#f59393", "#87cefa", "#f2f277", "#90ee90", "#ffcccb", "#aaffc3"]
+        def create_pie_chart(data, group_by, title):
+            # Group data and calculate percentages
+            grouped_data = data.groupby(group_by)['Kwota'].sum().reset_index()
+            grouped_data['Percentage'] = (grouped_data['Kwota'] / grouped_data['Kwota'].sum()) * 100
+
+            # Create Plotly Pie Chart
+            fig_pie = px.pie(
+                grouped_data,
+                names=group_by,
+                values='Kwota',
+                title=title,
+                labels={group_by: "Category", "Kwota": "Value"},
+                height=600
             )
-            ax.set_title(title, fontsize=16)
-            st.pyplot(fig)
+
+            # Display in Streamlit
+            st.plotly_chart(fig_pie)
 
         col1, col2, col3 = st.columns(3)
         # Pie Chart for Regions
