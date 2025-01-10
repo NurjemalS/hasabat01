@@ -1933,7 +1933,6 @@ if page == "Kwota":
 
 
         # Create a reusable pie chart function
-
         def create_pie_chart(data, group_by, title):
             # Group data and calculate percentages
             grouped_data = data.groupby(group_by)['Kwota'].sum().reset_index()
@@ -2999,6 +2998,108 @@ if page == "Bazar":
                 fig_stacked_bar.update_layout(xaxis_type="category")
 
                 st.plotly_chart(fig_stacked_bar)
+
+    with st.expander("ÝOM kwota - ÝOM tamamlanlar"):
+        st.write("### ÝOM kwota - ÝOM tamamlanlar seljermesi")
+        # Filter data for relevant variables
+        student_data = bazar_df[bazar_df["Variable"].isin(["ÝOM kwota", "ÝOM tamamlanlar"])]
+
+        # Pivot data for analysis
+        pivot_data = student_data.pivot_table(
+            index=["Year", "Ugur"],
+            columns="Variable",
+            values="Value",
+            aggfunc="sum"
+        ).reset_index()
+
+        # Calculate Efficiency Ratio
+        pivot_data["Completion Ratio"] = (pivot_data["ÝOM tamamlanlar"] / pivot_data["ÝOM kwota"]) * 100
+
+        # Melt data for Plotly compatibility
+        melted_data = pivot_data.melt(
+            id_vars=["Year", "Ugur"],
+            value_vars=["ÝOM kwota", "ÝOM tamamlanlar"],
+            var_name="Metric",
+            value_name="Count"
+        )
+
+        # Step 1: Sector Selection
+        selected_ugurs = st.multiselect(
+            " Ugur saýlaň  ",
+            options=bazar_df["Ugur"].unique(),
+            default="Jemi"
+        )
+
+        # Filter data based on selected sectors
+        filtered_data = melted_data[melted_data["Ugur"].isin(selected_ugurs)]
+
+        # Ensure data exists
+        if filtered_data.empty:
+            st.write("No data available for the selected sectors.")
+        else:
+            # 1. Line Chart: Trends Over Time
+            st.write("### Ugur boýunça ÝOM kwota - ÝOM tamamlanlar tendensiýasy")
+            fig_line = px.line(
+                filtered_data,
+                x="Year",
+                y="Count",
+                color="Metric",
+                line_group="Ugur",
+                title="",
+                labels={"Year": "Ýyl", "Count": "Talyp sany", "Metric": "Metrika"},
+                height=600
+            )
+            st.plotly_chart(fig_line)
+
+            # 2. Stacked Bar Chart: Proportion of Enrolled vs. Graduated
+            st.write("### ÝOM kwota - ÝOM tamamlanlar göterim paýy")
+            filtered_data["Total"] = filtered_data.groupby(["Year", "Ugur"])["Count"].transform("sum")
+            filtered_data["Percentage"] = (filtered_data["Count"] / filtered_data["Total"]) * 100
+
+            fig_stacked = px.bar(
+                filtered_data,
+                x="Year",
+                y="Percentage",
+                color="Metric",
+                barmode="stack",
+                facet_col="Ugur",
+                title="",
+                labels={"Year": "Ýyl", "Percentage": "Göterim (%)", "Metric": "Metrika"},
+                height=800
+            )
+
+              # Update layout to set xaxis_type as category for all subplots
+            facet_axes = [f"xaxis{i+1}" for i in range(len(filtered_data["Ugur"].unique()))]  # Generate axis names dynamically
+            for axis in facet_axes:
+                if axis in fig_stacked.layout:
+                    fig_stacked.layout[axis].type = "category"  # Ensure x-axis is treated as a category
+            st.plotly_chart(fig_stacked)
+        # 3. Scatter Plot: Enrolled vs. Graduated
+        st.write("### ÝOM kwota - ÝOM tamamlanlar gatnaşyklary")
+
+        # Exclude 'Jemi' from the data
+        scatter_data = pivot_data[pivot_data["Ugur"] != "Jemi"].dropna(subset=["ÝOM kwota", "ÝOM tamamlanlar"])  # Remove rows with missing values
+
+        # Create the scatter plot
+        fig_scatter = px.scatter(
+            scatter_data,
+            x="ÝOM kwota",
+            y="ÝOM tamamlanlar",
+            color="Ugur",
+            size="ÝOM kwota",  # Size of points based on enrolled students
+            hover_name="Ugur",
+            title="ÝOM kwota - ÝOM tamamlanlar sepme diagramma'",
+            labels={
+                "ÝOM kwota": "ÝOM kwota",
+                "ÝOM tamamlanlar": "ÝOM tamamlan",
+                "Ugur": "Ugur"
+            },
+            height=600
+        )
+
+        # Display the plot
+        st.plotly_chart(fig_scatter)
+
 
 # problem ds yurt kop:
 # tolegli kop
