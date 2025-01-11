@@ -55,6 +55,7 @@ st.sidebar.title("Nawigasiýa")
 page = st.sidebar.radio("Kategoriýa saýlaň", [
     "Kwota", 
     "Bazar", 
+    "Bazar çaklama", 
     # "Hünärler",
     # "Hümarmen ugurlar",
     # "Bakalawr ugurlar",
@@ -2528,6 +2529,101 @@ if page == "Kwota":
         # Plot line chart using Streamlit
         st.line_chart(pivot_data)
 
+        st.write("### Şeýlelikde ugur boýunça kwota çaklamalary")
+
+# Calculate university distribution from 2024 quota data
+        ugur_distribution = quota_2024.groupby('Ugur')['Kwota'].sum()
+        ugur_distribution = (ugur_distribution / ugur_distribution.sum()) * 100
+
+        # Initialize a DataFrame
+        ugur_distribution = ugur_distribution.reset_index()
+        ugur_distribution.columns = ['Ugur', 'Distribution']
+        st.write("Her ugruň kwotada paýy (2024)")
+        st.dataframe(ugur_distribution)
+
+        # Study type (Hünärmen vs Bakalawr) percentages for each university
+        study_distribution = (
+            quota_2024.groupby(['Ugur', 'Hünär'])['Kwota'].sum() /
+            quota_2024.groupby('Ugur')['Kwota'].sum()
+        ).reset_index()
+
+        # Rename columns for clarity
+        study_distribution.rename(columns={'Kwota': 'Percentage'}, inplace=True)
+
+        # Display the updated DataFrame
+        # st.dataframe(study_distribution)
+
+       # Step 1: Get 2024 university distribution
+
+       # Filter data for years after 2024 and Region "JEMI"
+        combined_quota["Year"] = pd.to_numeric(combined_quota["Year"], errors="coerce")
+
+        # Filter data for years after 2024 and region 'JEMI'
+        combined_quota = combined_quota[(combined_quota['Year'] > 2024) & (combined_quota['Region'] == 'JEMI')]
+
+        # Add university distribution to filtered_data
+        combined_quota = combined_quota.assign(key=1)  # Add a temporary key for cross join
+        ugur_distribution = ugur_distribution.assign(key=1)
+
+        university_quota = pd.merge(combined_quota, ugur_distribution, on='key').drop(columns='key')
+
+        # Calculate university quota
+        university_quota['Ugur_Kwota'] = university_quota['Kwota'] * (university_quota['Distribution'] / 100)
+
+        # Merge with study distribution to split into Hünärmen and Bakalawr
+        study_distribution = study_distribution.rename(columns={'Ugur': 'Ugur'})  # Ensure consistent naming
+        final_data = pd.merge(university_quota, study_distribution, left_on='Ugur', right_on='Ugur', how='inner')
+
+        # Calculate study type quota
+        final_data['Study_Type_Kwota'] = final_data['Ugur_Kwota'] * (final_data['Percentage'])
+        # st.dataframe(final_data)
+
+        # Filter historical data for years 2015-2024
+        historical_data = quota_data[(quota_data['Ýyl'] >= 2015) & (quota_data['Ýyl'] <= 2024)]
+
+        # Group by year, university, and study type for historical data
+        historical_grouped = historical_data.groupby(['Ýyl', 'Ugur', 'Hünär'])['Kwota'].sum().reset_index()
+        historical_grouped.rename(columns={'Ýyl': 'Year', 'Kwota': 'Quota'}, inplace=True)
+
+        # Add JEMI (all universities combined) for historical data
+        jemi_historical = historical_grouped.groupby(['Year', 'Hünär'])['Quota'].sum().reset_index()
+        jemi_historical['Ugur'] = 'JEMI'
+        historical_grouped = pd.concat([historical_grouped, jemi_historical], ignore_index=True)
+
+
+        # Combine historical and forecasted data
+        combined_data = pd.concat([historical_grouped, final_data], ignore_index=True)
+        combined_data["Year"] = combined_data["Year"].astype(str)
+        combined_data['Combined_Quota'] = combined_data['Quota'].combine_first(combined_data['Study_Type_Kwota'])
+        combined_data = combined_data[combined_data['Ugur'] != 'JEMI']
+
+        # st.dataframe(combined_data)
+
+        # Multiselect for universities, including 'JEMI'
+        all_ugur = list(combined_data['Ugur'].unique())
+        all_ugur.insert(0, "Ählisi")        
+        selected_ugurs = st.multiselect("Ugur saýlaň (azyndan iki ugur saýlaň)     ", options=all_ugur, default="Ählisi")
+
+        if "Ählisi" in selected_ugurs:
+            filtered_data = combined_data.copy()  # Select all data if "ALL" is chosen
+        else:
+            filtered_data = combined_data[combined_data['Ugur'].isin(selected_ugurs)]
+        
+        # Radio buttons for study type
+        study_type = st.radio("Hünär saýlaň  ", options=['Hünärmen', 'Bakalawr', 'Ikisem'])
+
+        # Filter combined data based on user selection
+        if study_type != 'Ikisem':
+            filtered_data = filtered_data[filtered_data['Hünär'] == study_type]
+        
+
+        # Pivot data for line chart
+        pivot_data = filtered_data.pivot_table(index='Year', columns='Ugur', values='Combined_Quota', aggfunc='sum').fillna(0)
+        
+        # Plot line chart using Streamlit
+        st.line_chart(pivot_data)
+
+
 if page == "Bazar":
     st.title("Türkmenistanda bazar ykdysadyýeti barada maglumatlar")
     st.markdown("<br>", unsafe_allow_html=True)
@@ -3272,6 +3368,20 @@ if page == "Bazar":
             st.plotly_chart(fig_scatter)
         else:
             st.write("No data available for scatter plot.")
+
+if page == "Bazar çaklama":
+    st.markdown("""
+        ###  Täze Kabul edilen ÝBI sanynynyň 4 ýyl boýunça hasaplamalaryna görä çaklamalar
+        ######  Gipoteza:
+        Daşary ýurdy tamamlap ykrar edenleriň 2023-nji ýyldan soňky ugurlar boýunça görkezijisi = 4 ýylyň (2015, 2020, 2022, 2023) ortaça sanyna deňdir
+        ######  Maksat:
+        Bu çaklama, geljek ýyllar üçin işçi güýjüniň ösüşine we pudaklaýyn zerurlyklaryna baha bermäge kömek edip, her ýyl ÝOM tamamlan talyplaryň pudaklara ýerleşişine baha bermäge kömek eder. """)
+    graduates_by_ugur = pd.read_csv("forecasted_graduates_by_ugur.csv")  # Replace with your file path
+    graduates_by_ugur["Year"] = graduates_by_ugur["Year"].astype(str)
+    st.dataframe(graduates_by_ugur)
+
+
+
 
 
 # problem ds yurt kop:
