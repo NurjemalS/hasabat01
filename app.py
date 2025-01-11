@@ -3100,6 +3100,179 @@ if page == "Bazar":
         # Display the plot
         st.plotly_chart(fig_scatter)
 
+    with st.expander("Täze Kabul edilen ÝBI sany - ÝOM tamamlanlar seljermesi"):
+
+        # Display Explanation in Streamlit
+    
+        st.markdown("""
+        ###### Täze Kabul edilen ÝBI sany hasaplamagyň formulasy:
+
+        
+        Täze Kabul edilen ÝBI sany = Kabul edilen ÝBI sany - Işden çykanlaryň sany * Ý.B. Işgärleriň sany/Işgärleriň sany + Pensiýa ýaşyna ýetenleriň takmynan sany
+    
+        ######  Maksat:
+
+        Bu formula, işçi güýjüniň ösüşine we pudaklaýyn zerurlyklaryna baha bermäge kömek edip, her ýyl täze döredilen ýokary bilimli işçi wezipelerini hasaplaýar.     """)
+
+        st.write("### Täze Kabul edilen ÝBI sany - ÝOM tamamlanlar seljermesi")
+
+        # Filter relevant variables
+        relevant_vars = [
+            "Kabul edilen ÝBI sany",
+            "Işden çykanlaryň sany",
+            "Ý.B. Işgärleriň sany",
+            "Işgärleriň sany",
+            "Pensiýa ýaşyna ýetenleriň takmynan sany",
+            "ÝOM tamamlanlar",
+            "Daşary ýurdy tamamlap ykrar edilenler"
+        ]
+        bazar_df = bazar_df[bazar_df["Variable"].isin(relevant_vars)]
+
+        # Pivot Data for Analysis
+        pivot_data = bazar_df.pivot_table(
+            index=["Year", "Ugur"],
+            columns="Variable",
+            values="Value",
+            aggfunc="sum"
+        ).reset_index()
+
+        # Calculate newly `Kabul edilen ÝBI sany`
+        pivot_data["Täze Kabul edilen ÝBI sany"] = (
+            pivot_data["Kabul edilen ÝBI sany"] -
+            pivot_data["Işden çykanlaryň sany"] * ((pivot_data["Ý.B. Işgärleriň sany"] * 100) / pivot_data["Işgärleriň sany"]) / 100 +
+            pivot_data["Pensiýa ýaşyna ýetenleriň takmynan sany"]
+        )
+
+        # Streamlit UI
+
+        # Radio Button for Graduate Type Selection
+        graduate_type = st.radio(
+            "ÝOM tamamlan görnüşini saýlaň",
+            options=["ÝOM tamamlanlar", "Daşary ýurdy tamamlap ykrar edilenler", "Ähli tamamlanlar"],
+            index=2, # Default to "Combined"
+            horizontal=True
+        )
+
+        # Adjust Data Based on Graduate Type Selection
+        if graduate_type == "Ähli tamamlanlar":
+            pivot_data["Tamamlanlar"] = (
+                pivot_data["ÝOM tamamlanlar"] + pivot_data["Daşary ýurdy tamamlap ykrar edilenler"]
+            )
+            graduate_label = "Combined Graduates"
+        elif graduate_type == "ÝOM tamamlanlar":
+            pivot_data["Tamamlanlar"] = pivot_data["ÝOM tamamlanlar"]
+            graduate_label = "ÝOM tamamlanlar"
+        else:
+            pivot_data["Tamamlanlar"] = pivot_data["Daşary ýurdy tamamlap ykrar edilenler"]
+            graduate_label = "Daşary ýurdy tamamlap ykrar edilenler"
+
+        # Step 1: Sector (Ugur) Selection
+        selected_ugurs = st.multiselect(
+            "   Ugur saýlaň",
+            options=bazar_df["Ugur"].unique(),
+            default=["Jemi"]
+        )
+
+        # Filter data based on selected sectors
+        filtered_data = pivot_data[pivot_data["Ugur"].isin(selected_ugurs)]
+
+        # Visualization 1: Line Chart
+        if not filtered_data.empty:
+            st.write("### Täze Kabul edilen ÝBI sany - ÝOM tamamlanlar")
+            comparison_data = filtered_data.melt(
+                id_vars=["Year", "Ugur"],
+                value_vars=["Täze Kabul edilen ÝBI sany", "Tamamlanlar"],
+                var_name="Category",
+                value_name="Count"
+            )
+            fig_line = px.line(
+                comparison_data,
+                x="Year",
+                y="Count",
+                color="Category",
+                line_group="Ugur",
+                title="",
+                labels={"Count": "Sany", "Category": "Katigoriýa", "Year": "Ýyl"},
+                height=600
+            )
+            st.plotly_chart(fig_line)
+        else:
+            st.write("No data available for the selected sectors.")
+
+
+        if not filtered_data.empty:
+            comparison_data = filtered_data.melt(
+                id_vars=["Year", "Ugur"],
+                value_vars=["Täze Kabul edilen ÝBI sany", "Tamamlanlar"],
+                var_name="Category",
+                value_name="Count"
+            )
+
+            # Calculate Percentage Change
+            comparison_data["Percentage Change"] = comparison_data.groupby(["Category", "Ugur"])["Count"].pct_change() * 100
+
+            # Drop NaN values that result from pct_change for the first year
+            percentage_change_data = comparison_data.dropna(subset=["Percentage Change"])
+
+            st.write("### Göterim üýtgemegi: Täze Kabul edilen ÝBI sany we Tamamlanlar")
+            fig_line_pct = px.line(
+                percentage_change_data,
+                x="Year",
+                y="Percentage Change",
+                color="Category",
+                line_group="Ugur",
+                title="",
+                labels={"Percentage Change": "Göterim (%) ", "Category": "Katigoriýa", "Year": "Ýyl"},
+                height=600
+            )
+            st.plotly_chart(fig_line_pct)
+
+        else:
+            st.write("No data available for the selected sectors.")
+
+
+        # Visualization 2: Stacked Bar Chart
+        if not filtered_data.empty:
+            st.write("### Täze Kabul edilen ÝBI sanynyň - ÝOM tamamlanlara gatnaşygy")
+            stacked_data = filtered_data.melt(
+                id_vars=["Year", "Ugur"],
+                value_vars=["Täze Kabul edilen ÝBI sany", "Tamamlanlar"],
+                var_name="Metric",
+                value_name="Value"
+            )
+            fig_stacked = px.bar(
+                stacked_data,
+                x="Year",
+                y="Value",
+                color="Metric",
+                barmode="stack",
+                facet_col="Ugur",
+                title="",
+                labels={"Year": "Ýyl", "Value": "Sany", "Metric": "Katigoriýa"},
+                height=800
+            )
+            fig_stacked.update_layout(xaxis_type="category")
+
+            st.plotly_chart(fig_stacked)
+
+        # Visualization 3: Scatter Plot
+        if not filtered_data.empty:
+            st.write("### Correlation Between Selected Graduates and Workforce")
+            fig_scatter = px.scatter(
+                filtered_data,
+                x="Tamamlanlar",
+                y="Täze Kabul edilen ÝBI sany",
+                size="Işgärleriň sany",
+                color="Ugur",
+                hover_name="Ugur",
+                title="",
+                labels={"Tamamlanlar":"Tamamlanlar", "Täze Kabul edilen ÝBI sany": "Täze Kabul edilen ÝBI sany"},
+                height=600
+            )
+            st.plotly_chart(fig_scatter)
+        else:
+            st.write("No data available for scatter plot.")
+
 
 # problem ds yurt kop:
 # tolegli kop
@@ -3163,5 +3336,3 @@ if page == "Bazar":
 
 
 # her pudak pzije indicator 
-
-
