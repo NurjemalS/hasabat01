@@ -11,8 +11,6 @@ import plotly.graph_objects as go
 import altair as alt
 
 
-
-
 # from squarify import normalize_sizes, squarify
 
 # import numpy as np
@@ -63,303 +61,9 @@ page = st.sidebar.radio("Kategoriýa saýlaň", [
     "Alymlyk derejeler",
     "Halkara indedeksli zurnallar",
     "Maddy enjamlaýyn üpjünçilik",
-    # "Şahamçalar",
     "Hyzmatdaşlyklar"
 ])
 
-def ugurlar(file_path):
-    # humarmen_main()  # Call the main function from humarmen_ugurlar.py
-     # Set global font to Times New Roman
-    plt.rcParams["font.family"] = "Times New Roman"
-
-
-        # Load the restructured data
-    # file_path = "restructured_data_2.csv"  # Update with your actual path
-    df = pd.read_csv(file_path)
-    df.fillna(0, inplace=True)
-
-        # Sidebar Filters
-    # years = sorted(df['Year'].unique())
-    # universities = sorted(df['Uviversity'].unique())
-
-    years = ["Ählisi"] + sorted(df['Year'].unique())
-    universities = ["Ählisi"] + sorted(df['Uviversity'].unique())
-
-    selected_years = st.multiselect("Ýyl saýlaň", years, default='Ählisi')
-    selected_universities = st.multiselect("Uniwersitet saýlaň", universities, default='Ählisi')
-    # selected_faculties = st.multiselect("Select Faculty/Faculties", faculties, default=faculties)      bring it backkkkkkkkkkkkkkkkk
-
-        # Filter data based on selection
-    filtered_df = df[
-        ((df['Year'].isin(selected_years)) | ("Ählisi" in selected_years)) &
-        ((df['Uviversity'].isin(selected_universities)) | ("Ählisi" in selected_universities))
-    ]
-
-        # Display filtered data
-    # st.write("### Filtered Data")
-    # st.dataframe(filtered_df)
-
-        # 1. Enrollment Trends Over Years
-    st.write("### Ýyllaryň dowamynda umumy hasaba alyş tendendi")
-    enrollment_trend = filtered_df.groupby('Year')[['Tölegli talyp sany', 'BŽ talyp sany']].sum().reset_index()
-    fig, ax = plt.subplots(figsize=(10, 6))
-    sns.lineplot(data=enrollment_trend, x='Year', y='Tölegli talyp sany', marker='o', label='Tölegli talyplar', ax=ax)
-    sns.lineplot(data=enrollment_trend, x='Year', y='BŽ talyp sany', marker='o', label='BŽ talyplar', ax=ax)
-    ax.set_title("Ýyl boýunça umumy hasaba alyş tendendi", fontsize=18, weight='bold')
-    ax.set_xlabel("Ýyl", fontsize=14)
-    ax.set_ylabel("Talyp sany", fontsize=14)
-    ax.legend(fontsize=12)
-    st.pyplot(fig)
-
-        # 2. University-Wise Enrollment
-    st.write("### Uniwersitet ara hasaba alyş")
-    university_totals = filtered_df.groupby('Uviversity')[['Tölegli talyp sany', 'BŽ talyp sany']].sum()
-    if not university_totals.empty and university_totals.sum().sum() > 0:
-        fig, ax = plt.subplots(figsize=(12, 8))
-        university_totals.plot(kind='bar', stacked=True, ax=ax, color=["#87cefa", "#f59393"])
-        ax.set_title("Uniwersitet ara hasaba alyş", fontsize=18, weight='bold')
-        ax.set_xlabel("Uniwersitet", fontsize=14)
-        ax.set_ylabel("Talyp sany", fontsize=14)
-        st.pyplot(fig)
-    else:
-        st.warning("Bu uniwersitetde hiç hili  ugur yok.")
-
-        # 3. Faculty Analysis
-    st.write("### Ugurlar boýunça hasaba alyş")
-    faculty_totals = filtered_df.groupby('Hünärler')[['Tölegli talyp sany', 'BŽ talyp sany']].sum()
-    if not faculty_totals.empty and faculty_totals.sum().sum() > 0:
-        faculty_totals = faculty_totals[faculty_totals.sum(axis=1) > 0]  # Remove faculties with zero students
-        fig, ax = plt.subplots(figsize=(12, 8))
-        faculty_totals.plot(kind='bar', stacked=True, ax=ax, color=["#90ee90", "#f2f277"])
-        ax.set_title("Ugurlar boýunça hasaba alyş", fontsize=18, weight='bold')
-        ax.set_xlabel("Ugurlar", fontsize=14)
-        ax.set_ylabel("Talyp sany", fontsize=14)
-        st.pyplot(fig)
-    else:
-        st.warning("Bu uniwersitetde hiç hili  ugur yok.")
-
-
-    # 5. Yearly Enrollment Summary
-    st.write("### Ýyl boýunça hasaba alyş")
-    yearly_totals = filtered_df.groupby('Year')[['Tölegli talyp sany', 'BŽ talyp sany']].sum()
-    if not yearly_totals.empty and yearly_totals.sum().sum() > 0:
-            st.bar_chart(yearly_totals)
-    else:
-        st.warning("Bu uniwersitetde hiç hili  ugur yok.")
-
-
-    ol1, col2, col3 = st.columns(3)
-
-    with col2:
-        st.write("### Tölegli talyplar we BŽ talyplar göterim gatnaşygy")
-
-        total_students = filtered_df[['Tölegli talyp sany', 'BŽ talyp sany']].sum().sum()
-        paid_percentage = (filtered_df['Tölegli talyp sany'].sum() / total_students) * 100
-        unpaid_percentage = (filtered_df['BŽ talyp sany'].sum() / total_students) * 100
-
-        if total_students.sum().sum() > 0:
-            fig, ax = plt.subplots(figsize=(6, 6))
-            ax.pie(
-                [paid_percentage, unpaid_percentage],
-                labels=["Tölegli talyp sany", "BŽ talyp sany"],
-                autopct='%1.1f%%',
-                colors=["#87cefa", "#f59393"],
-                startangle=90,
-                textprops={"fontsize": 18}
-            )
-            ax.set_title("Tölegli talyplar we BŽ talyplar göterim gatnaşygy", fontsize=16, weight='bold')
-            st.pyplot(fig)
-        else:
-            st.warning("Bu uniwersitetde hiç hili  ugur yok.")
-
-
-
-# ???????????????????????????????
-    st.write("### Ýyl-ýyla hasaba alyşynyň göterim üýtgeýşi")
-    enrollment_trend['Total Students'] = enrollment_trend['Tölegli talyp sany'] + enrollment_trend['BŽ talyp sany']
-    if 'Total Students' in enrollment_trend.columns and (enrollment_trend['Total Students'] > 0).any():
-
-        enrollment_trend['YoY Change (%)'] = enrollment_trend['Total Students'].pct_change() * 100
-
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.barplot(
-            x='Year', y='YoY Change (%)', data=enrollment_trend, palette="viridis", ax=ax
-        )
-        ax.axhline(0, color="gray", linestyle="--", linewidth=1)
-        ax.set_title("Ýyl-ýyla hasaba alyşynyň göterim üýtgeýşi", fontsize=16, weight='bold')
-        ax.set_xlabel("Ýyl", fontsize=14)
-        ax.set_ylabel(" Göterim üýtgeýşi (%)", fontsize=14)
-        st.pyplot(fig)
-    else:
-        st.warning("Bu uniwersitetde hiç hili  ugur yok.")
-
-# ????????????
-    st.write("### Ugurlar boýunça ýokary 10 sany görkeziji")
-    faculty_totals['Total Students'] = faculty_totals['Tölegli talyp sany'] + faculty_totals['BŽ talyp sany']
-    if 'Total Students' in faculty_totals.columns and (faculty_totals['Total Students'] > 0).any():
-
-        top_faculties = faculty_totals.sort_values('Total Students', ascending=False).head(10)
-
-        fig, ax = plt.subplots(figsize=(10, 8))
-        top_faculties['Total Students'].plot(kind='barh', color="#90ee90", ax=ax)
-        ax.set_title("Ugurlary boýunça ýokary 10 sany görkeziji", fontsize=16, weight='bold')
-        ax.set_xlabel("Talyplar", fontsize=14)
-        ax.set_ylabel("Ugurlar", fontsize=14)
-        ax.invert_yaxis()
-        st.pyplot(fig)
-    else:
-        st.warning("Bu uniwersitetde hiç hili  ugur yok.")
-
-
-if page == "Hünärler":
-    st.header(page_title)
-
-    df_hunarler = pd.read_csv('structured_data.csv')
-    # st.write(df_hunarler)
-    # print(df_hunarler.dtypes)
-
-    df_hunarler['Talyp sany'] = pd.to_numeric(df_hunarler['Talyp sany'], errors='coerce')  # Convert to numeric, coercing invalid values to NaN
-    df_hunarler = df_hunarler[df_hunarler['Talyp sany'].notnull()] 
-    df_hunarler['Talyp sany'] = df_hunarler['Talyp sany'].astype(int)  # Convert to integer
-
-    # st.dataframe(df)
-    # Multiselect for filtering universities
-    universities = df_hunarler['University'].unique().tolist()
-    universities.sort()  # Sort alphabetically
-    universities.insert(0, "Ählisi")  # Add "All" option at the top
-
-    selected_universities = st.multiselect(
-        "Uniwersitet saýlaň:",
-        options=universities,
-        default="Ählisi"
-    )
-
-    # Filter the DataFrame based on selection
-    if "Ählisi" in selected_universities:
-        filtered_df = df_hunarler  # No filtering
-    else:
-        filtered_df = df_hunarler[df_hunarler['University'].isin(selected_universities)]
-
-    # Line chart: Trends over time by Year and Program
-    st.subheader("Setir çyzgysy: Hünärler boýunça talyplaryň sany")
-    line_chart_data = filtered_df.groupby(['Year', 'Hünärler'])['Talyp sany'].sum().unstack()
-    st.line_chart(line_chart_data)
-
-    # Dropdown for filtering year with an "All" option
-    years = df_hunarler['Year'].unique().tolist()
-    years.sort()  # Sort by year
-    years.insert(0, "Ählisi")  # Add "All" option at the top
-
-    selected_year = st.selectbox(
-        "Ýyl saýlaň:",
-        options=years,
-        index=0
-    )
-
-    # Filter DataFrame based on year selection
-    if selected_year != "Ählisi":
-        filtered_df = filtered_df[filtered_df['Year'] == selected_year]
-        pie_data = filtered_df[filtered_df['Year'] == selected_year].groupby('Hünärler')['Talyp sany'].sum()
-    else:
-        pie_data = filtered_df.groupby('Hünärler')['Talyp sany'].sum()
-        
-
-   
-    st.subheader("Hünärler boýunça hünärleriň paýlanyşy")
-    stacked_data = filtered_df.groupby(['Year', 'Hünärler'])['Talyp sany'].sum().unstack()
-    stacked_data = stacked_data.fillna(0)
-    stacked_data = stacked_data.apply(pd.to_numeric, errors='coerce')
-    print(stacked_data)
-    print(stacked_data.dtypes)
-
-
-        # Plotting
-    fig, ax = plt.subplots(figsize=(10, 6))
-    stacked_data.plot(kind='bar', stacked=True, ax=ax)
-    ax.set_title("Ýyl boýunça hünärleriň paýlanyşy")
-    ax.set_ylabel("Talyp sany")
-    ax.set_xlabel("")
-    st.pyplot(fig)
-
-
-    # Bar chart: Summarize student counts by Program for selected year(s)
-    st.subheader("Hünär boýunça jemi talyp sany")
-    bar_chart_data = filtered_df.groupby('Hünärler')['Talyp sany'].sum()
-    st.bar_chart(bar_chart_data)
-
-    st.subheader("Belli bir ýyl üçin hünär paýlanyşy")
-
-    col1, col2, col3 = st.columns(3)
-    with col2:
-        if pie_data.sum() == 0:
-            # st.subheader("Belli bir ýyl üçin hünär paýlanyşy")
-            # st.dataframe(pie_data.reset_index().rename(columns={"index": "Program", 0: "Talyp sany"}))
-            st.warning("Bu ýýylda hiç hili hünär yok.")
-        else:
-            # Plot the pie chart
-
-            fig, ax = plt.subplots(figsize=(8, 6))
-            pie_data.plot(kind='pie', autopct='%1.1f%%', ax=ax, startangle=90, colors=["#90ee90", "#87cefa", "#f59393"])
-            ax.set_ylabel("")  # Remove y-axis label
-            ax.set_title("Belli bir ýyl üçin hünär paýlanyşy", fontsize=14)
-
-            # Streamlit display
-            st.pyplot(fig)
-
-    
-
-    # Subheader for Streamlit
-    st.subheader("Uniwersitet we ýyl boýunça ýazylmak (enrollment)")
-
-    # Pivot the data for heatmap
-    heatmap_data = filtered_df.pivot_table(
-        index='University', columns='Year', values='Talyp sany', aggfunc='sum'
-    ).fillna(0)
-
-    # Plotting with adjustments
-    fig, ax = plt.subplots(figsize=(15, 10))  # Increase figure size for readability
-    sns.heatmap(
-        heatmap_data,
-        cmap="YlGnBu",  # Keep a readable color palette
-        annot=False,  # Remove text annotations for better readability
-        linewidths=0.5,  # Add gridlines
-        cbar_kws={"shrink": 0.8}  # Shrink colorbar for better alignment
-    )
-
-    # Improve axis label readability
-    ax.set_title("Uniwersitet we ýyl boýunça ýazylmak (enrollment)", fontsize=16, pad=20)
-    ax.set_xlabel("Ýyl", fontsize=12)
-    ax.set_ylabel("Uniwersitet", fontsize=12)
-    ax.tick_params(axis='x', rotation=45, labelsize=10)  # Rotate x-axis labels
-    ax.tick_params(axis='y', labelsize=10)  # Adjust y-axis label size
-
-    # Display the heatmap
-    st.pyplot(fig)
-
-
-    st.subheader("Correlation Heatmap")
-    corr_data = filtered_df[['Talyp sany']].copy()
-    corr_data['Year'] = filtered_df['Year'].astype(str).str[:4].astype(int)  # Convert 'Year' to numeric start year
-    correlation = corr_data.corr()
-
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.heatmap(correlation, annot=True, cmap='coolwarm', ax=ax)
-    ax.set_title("Correlation Matrix")
-    st.pyplot(fig)
-
-if page == "Hümarmen ugurlar":
-    st.title("Hümarmen ugurlar seljermesi")
-    ugurlar("restructured_data_2.csv")
-    
-
-if page == "Bakalawr ugurlar":
-    st.title("Bakalawr ugurlar seljermesi")
-    ugurlar("restructured_data_3.csv")
-
-
-if page == "Magistr ugurlar":
-    st.title("Magistr ugurlar seljermesi")
-    ugurlar("restructured_data_4.csv")
 
 if page == "Hyzmatdaşlyklar":
 
@@ -632,18 +336,18 @@ if page == "Hyzmatdaşlyklar":
 
 
     # Filters
-    years = ["All Years"] + sorted(data["Year"].unique().tolist())
-    universities = ["All Universities"] + sorted(data["University"].unique().tolist())
+    years = ["Ähli ýyllar"] + sorted(data["Year"].unique().tolist())
+    universities = ["Ähli uniwersitetler"] + sorted(data["University"].unique().tolist())
 
-    selected_year = st.selectbox("Select Year", years)
-    selected_university = st.selectbox("Select University", universities)
+    selected_year = st.selectbox(" Ýyl saýlaň  ", years)
+    selected_university = st.selectbox("Uniwersitet saýlaň    ", universities)
 
 
     def filter_data(data, selected_university, selected_year):
         filtered_data = data
-        if selected_year != "All Years":
+        if selected_year != "Ähli ýyllar":
             filtered_data = filtered_data[filtered_data["Year"] == selected_year]
-        if selected_university != "All Universities":
+        if selected_university != "Ähli uniwersitetler":
             filtered_data = filtered_data[filtered_data["University"] == selected_university]
         return filtered_data
 
@@ -673,8 +377,11 @@ if page == "Hyzmatdaşlyklar":
     # Display results
     # st.write(f"### Selected University: {selected_university}")
     # st.write(f"### Selected Year: {selected_year}")
-    st.write(f"#### Unique Partner Countries: {unique_countries}")
-    st.write(f"#### Unique Partner Universities: {unique_universities}")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.write(f"#### Hyzmatdaşlyk edýän ýurtlarymyz (unique): {unique_countries}")
+    st.write(f"#### Hyzmatdaşlyk edýän uniwersitetlerimiz (unique): {unique_universities}")
     country_names = [country for country in country_names if pd.notna(country)]
     university_names = [university for university in university_names if pd.notna(university)]
 
@@ -708,8 +415,11 @@ if page == "Hyzmatdaşlyklar":
     country_university_map = map_country_to_universities(filtered_data, university_map)
 
     # Display in Streamlit with Expanders
-    with st.expander("Partner Countries and Universities (Click to Expand)"):
-        st.write("#### Partner Countries and Universities")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    with st.expander("Hyzmatdaşlyk edýän ýurtlarymyz we uniwersitetlerimiz"):
+        st.write("#### Hyzmatdaşlyk edýän ýurtlarymyz we uniwersitetlerimiz")
         if country_university_map:
             for country, universities in country_university_map.items():
                 st.write(f"**{country}:**")
@@ -719,6 +429,8 @@ if page == "Hyzmatdaşlyklar":
                     st.write("No universities available for this country.")
         else:
             st.write("No partner countries or universities available.")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
     def calculate_growth(data):
         # Group data by year
@@ -746,8 +458,8 @@ if page == "Hyzmatdaşlyklar":
         # Create a DataFrame for analysis
         growth_df = pd.DataFrame({
             "Year": years,
-            "Unique Countries": unique_countries_growth,
-            "Unique Universities": unique_universities_growth
+            "Ýurtlar (Unique)": unique_countries_growth,
+            "Uniwersitetler (Unique)": unique_universities_growth
         })
         return growth_df
 
@@ -756,7 +468,7 @@ if page == "Hyzmatdaşlyklar":
         """
         Displays a Streamlit line chart for unique countries and universities over time.
         """
-        st.subheader("Line Chart: Growth of Unique Countries and Universities Over Time")
+        st.subheader("Hyzmatdaşlyk edýän ýurtlaryň we uniwersitetleriň tendensiýasy")
 
         # Transform the DataFrame for line chart format
         line_chart_data = growth_df.set_index("Year")
@@ -810,7 +522,7 @@ if page == "Hyzmatdaşlyklar":
             )
         )
 
-    st.subheader("World Map of Partnerships")
+    st.subheader("Hyzmatdaşlyk kartasy")
     plot_world_map(country_counts)
 
 
@@ -864,8 +576,8 @@ if page == "Hyzmatdaşlyklar":
 
         # Rename columns for clarity
         final_counts.rename(columns={
-            "Partner Country Code": "Non-Unique Country Count",
-            "Partner University Code": "Non-Unique University Count"
+            "Partner Country Code": "Ýurt sany (Non-Unique)",
+            "Partner University Code": "Uniwersitet sany (Non-Unique)"
         }, inplace=True)
 
         return final_counts
@@ -875,10 +587,13 @@ if page == "Hyzmatdaşlyklar":
     corrected_non_unique_counts_df = calculate_non_unique_counts(filtered_data)
 
     # Visualize using Streamlit's bar chart
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
     st.subheader("Jemi hyzmatdaş ýurt we uniwersitet sany")
     bar_chart_data = corrected_non_unique_counts_df.set_index("Year")[[
-        "Non-Unique Country Count", 
-        "Non-Unique University Count"
+        "Ýurt sany (Non-Unique)", 
+        "Uniwersitet sany (Non-Unique)"
     ]]
     st.bar_chart(bar_chart_data)
 
@@ -895,49 +610,39 @@ if page == "Hyzmatdaşlyklar":
         st.bar_chart(partner_universities_chart)
 
     # Analysis
-    st.header("Partner University Analysis")
+    st.subheader("Ýurt boýunça uniwersitet seljermesi")
     partner_universities = analyze_partner_universities(filtered_data)
     plot_partner_universities_with_streamlit(partner_universities)
 
 
-    def plot_country_distribution(data):
-        # Count unique universities per country
-        university_distribution = data.groupby("Partner Country Code")["Partner University Code"].nunique().reset_index()
-        university_distribution = university_distribution.merge(country_metadata, left_on="Partner Country Code", right_on="Country Code", how="left")
-        university_distribution = university_distribution.sort_values("Partner University Code", ascending=False)
+    def create_country_distribution_pie_chart(data, title):
+        # Group data and calculate percentages
+        country_distribution = data.groupby("Partner Country Code")["Partner University Code"].nunique().reset_index()
+        country_distribution = country_distribution.merge(country_metadata, left_on="Partner Country Code", right_on="Country Code", how="left")
+        country_distribution = country_distribution.rename(columns={"Partner University Code": "University Count"})
+        country_distribution['Percentage'] = (country_distribution['University Count'] / country_distribution['University Count'].sum()) * 100
 
-        # Limit the number of slices displayed
-        top_n = 10  # Show top 10 countries
-        others = university_distribution.iloc[top_n:].sum(numeric_only=True)["Partner University Code"]
-        top_countries = university_distribution.iloc[:top_n]
-        others_row = pd.DataFrame([{"Partner Country Code": "Others", "Partner University Code": others}])
-        top_countries = pd.concat([top_countries, others_row], ignore_index=True)
-
-        # Plot the improved pie chart
-        fig, ax = plt.subplots(figsize=(8, 6))
-        wedges, texts, autotexts = ax.pie(
-            top_countries["Partner University Code"], 
-            labels=top_countries["Partner Country Code"], 
-            autopct='%1.1f%%', 
-            startangle=90, 
-            textprops={'fontsize': 15}, 
-            colors=plt.cm.tab20.colors
+        # Create Plotly Pie Chart
+        fig_pie = px.pie(
+            country_distribution,
+            names="Partner Country Code",
+            values="University Count",
+            title=title,
+            labels={"Partner Country Code": "Country", "University Count": "University Count"},
+            height=600
         )
-        ax.set_title("Distribution of Partner Universities by Country", fontsize=16, weight="bold")
-        
-        # Improve label formatting
-        for text in texts:
-            text.set_fontsize(9)
-        for autotext in autotexts:
-            autotext.set_fontsize(9)
 
-        # Display the chart
-        st.pyplot(fig)
+        # Display in Streamlit
+        st.plotly_chart(fig_pie)
 
     col1, col2, col3 = st.columns(3)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
     with col2:
-        st.header("Distribution of Partner Universities")
-        plot_country_distribution(filtered_data)
+        st.subheader("Ýurt boýunça hyzmatdaşlygyň göterim paýy")
+        create_country_distribution_pie_chart(filtered_data, "")
+
 
 
     def plot_heatmap(data):
@@ -946,14 +651,18 @@ if page == "Hyzmatdaşlyklar":
 
         fig, ax = plt.subplots(figsize=(12, 8))
         sns.heatmap(heatmap_data, cmap="YlGnBu", annot=True, fmt="d", linewidths=0.5)
-        ax.set_title("Heatmap of Partnerships Over Time", fontsize=16, weight="bold")
-        ax.set_xlabel("Partner Country Code", fontsize=14)
-        ax.set_ylabel("Year", fontsize=14)
+        ax.set_title("", fontsize=16, weight="bold")
+        ax.set_xlabel("Ýurt kody", fontsize=14)
+        ax.set_ylabel("Ýyl", fontsize=14)
         st.pyplot(fig)
 
 
-    st.header("Heatmap of Partnerships")
+    st.subheader("Hyzmatdaşlyk ýylylyk kartasy")
     plot_heatmap(filtered_data)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
 
 
 
@@ -970,9 +679,9 @@ if page == "Hyzmatdaşlyklar":
         top_countries = data.groupby("Partner Country Code").size().reset_index(name="Partnerships").sort_values("Partnerships", ascending=False).head(10)
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.bar(top_countries["Partner Country Code"], top_countries["Partnerships"], color="orange")
-        ax.set_title("Top 10 Partner Countries", fontsize=16, weight="bold")
-        ax.set_xlabel("Country Code", fontsize=14)
-        ax.set_ylabel("Number of Partnerships", fontsize=14)
+        ax.set_title("Ýokary 10 ýurt", fontsize=16, weight="bold")
+        ax.set_xlabel("Ýurt kody", fontsize=14)
+        ax.set_ylabel("Hyzmatdaşlyk sany", fontsize=14)
         st.pyplot(fig)
 
         # Top universities
@@ -981,13 +690,13 @@ if page == "Hyzmatdaşlyklar":
 
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.bar(top_universities["Partner University Name"], top_universities["Partnerships"], color="green")
-        ax.set_title("Top 10 Partner Universities", fontsize=16, weight="bold")
-        ax.set_xlabel("University Name", fontsize=14)
-        ax.set_ylabel("Number of Partnerships", fontsize=14)
+        ax.set_title("Ýokary 10 uniwersitet", fontsize=16, weight="bold")
+        ax.set_xlabel("Uniwersitet", fontsize=14)
+        ax.set_ylabel("Hyzmatdaşlyk sany", fontsize=14)
         plt.xticks(rotation=45, ha="right", fontsize=10)
         st.pyplot(fig)
 
-    st.header("Top Partner Countries and Universities")
+    st.subheader("Ýokary görkezijili ýurtlar we uniwersitetler")
     plot_top_partners(filtered_data, university_map)
 
 if page == "Alymlyk derejeler":
@@ -3371,78 +3080,226 @@ if page == "Bazar":
 
 if page == "Bazar çaklama":
     st.markdown("""
-        ###  Täze Kabul edilen ÝBI sanynynyň 4 ýyl boýunça hasaplamalaryna görä çaklamalar
-        ######  Gipoteza:
-        Daşary ýurdy tamamlap ykrar edenleriň 2023-nji ýyldan soňky ugurlar boýunça görkezijisi = 4 ýylyň (2015, 2020, 2022, 2023) ortaça sanyna deňdir
+        ###  Täze Kabul edilen ÝBI sanynynyň hem-de Daşary ýurdy tamamlap ykrar edilenleriň 4 ýyl boýunça hasaplamalaryna görä çaklamalar. (Linear Regression)
+
         ######  Maksat:
         Bu çaklama, geljek ýyllar üçin işçi güýjüniň ösüşine we pudaklaýyn zerurlyklaryna baha bermäge kömek edip, her ýyl ÝOM tamamlan talyplaryň pudaklara ýerleşişine baha bermäge kömek eder. """)
-    graduates_by_ugur = pd.read_csv("forecasted_graduates_by_ugur.csv")  # Replace with your file path
-    graduates_by_ugur["Year"] = graduates_by_ugur["Year"].astype(str)
-    st.dataframe(graduates_by_ugur)
+  
+    # Load Data
+    forecasted_graduates_by_ugur = pd.read_csv("forecasted_graduates_by_ugur.csv")  # Year, Ugur, ÝOM tamamlajaklar
+    workplace_data = pd.read_csv("forecasted_taze_kabul_edilen_ybi_sany.csv")  # Year, Ugur, Täze Kabul edilen ÝBI sany
+    abroad_grads = pd.read_csv("forecasted_abroad_grads.csv")  # Year, Ugur, Daşary ýurdy tamamlap ykrar edilenler
+
+    # University and Industry Ugur Mapping
+    ugur_mapping = {
+        "1. Matematika we tebigy ylymlar": [13, 14, 15, 16, 19, 20],
+        "2. Inženerçilik işi, tehnologiýalar we tehniki ylymlar": [2, 3, 4, 5, 6, 8, 10, 13, 14, 15, 19, 20],
+        "3. Saglygy goraýyş we lukmançylyk ylymlary": [17, 13, 14, 15, 19, 20],
+        "4. Oba hojalygy we oba hojalyk ylymlary": [1, 13, 14, 15, 19, 20],
+        "5. Jemgyýet baradaky ylymlar": [7, 9, 10, 11, 12, 13, 14, 15, 19, 20],
+        "6. Bilim we pedagogika (mugallymçylyk) ylymlary": [13, 14, 15, 16, 19, 20],
+        "7. Ynsanperwer ylymlar": [13, 14, 15, 16, 19, 20],
+        "8. Sungat we medeniýet": [13, 14, 15, 16, 18, 19, 20],
+    }
+
+    # Industry Ugurs (Example list)
+    industry_ugurs = [
+        "1.Оba hojalygy, tokaý hojalygy we balyk tutmak",
+        "2.Magdan gazyp çykaryjy senagat we känleri işläp taýýarlamak",
+        "3.Işläp bejerýän önümçilikler",
+        "4.Elektrik energiýasy, gaz, bug bilen üpjün etmek we howany kondisionirlemek",
+        "5.Suw üpjünçiligi, galyndylary arassalamak, gaýtadan işlemek we ikinji çig maly almak",
+        "6.Gurluşyk",
+        "7.Lomaý we bölek satuw söwdasy; awtomobilleri we motosiklleri abatlamak",
+        "8.Ulag işleri we ýükleri saklamak",
+        "9.Myhmanhanalaryň we restoranlaryň işleri",
+        "10.Habar beriş serişdeleri we aragatnaşyk",
+        "11.Maliýe dellalçylygy we ätiýaçlandyrmak",
+        "12.Gozgalmaýan emläk bilen bagly amallar",
+        "13.Hünärmenlik, ylmy we tehniki işler",
+        "14.Administratiw we kömekçi işler",
+        "15.Döwlet dolandyryşy we goranmak; hökmany durmuş üpjünçilik",
+        "16.Bilim",
+        "17.Saglygy goraýyş we ilata durmuş taýdan hyzmat etmek",
+        "18.Sungat, dynç alyş we göwün açyş",
+        "19.Gaýry hyzmat ediş işler",
+        "20. Işleriň gaýry görnüşleri",
+    ]
+
+    # Add "ALL" option to university and industry ugurs
+    university_ugurs = ["Ählisi"] + list(ugur_mapping.keys())
+    industry_ugurs = ["Ählisi"] + industry_ugurs
+
+    # Step 1: Multiselect for University Ugur
+    selected_university_ugurs = st.multiselect(
+        "Uniwersitet ugur saýlaň ",
+        options=university_ugurs,
+        default=["Ählisi"]
+    )
+
+    # Step 2: Dynamically filter and sort Industry Ugurs based on University Ugur
+    if "Ählisi" in selected_university_ugurs or not selected_university_ugurs:
+        sorted_industry_ugurs = industry_ugurs
+    else:
+        matching_industry_ids = set(
+            id for univ_ugur in selected_university_ugurs for id in ugur_mapping[univ_ugur]
+        )
+        industry_ugur_order = []
+        for idx, industry in enumerate(industry_ugurs[1:], start=1):  # Skip "ALL"
+            if idx in matching_industry_ids:
+                industry_ugur_order.append((industry, True))  # Matching
+            else:
+                industry_ugur_order.append((industry, False))  # Non-Matching
+
+        # Separate matching and non-matching industries
+        matching_industries = [ind for ind, match in industry_ugur_order if match]
+        non_matching_industries = [ind for ind, match in industry_ugur_order if not match]
+
+        # Combine for display (matching first, then non-matching)
+        sorted_industry_ugurs = ["Ählisi"] + matching_industries + ["--- Gabat gelmeýän pudaklar ---"] + non_matching_industries
+
+    # Step 3: Multiselect for Industry Ugur (Sorted Options)
+    selected_industry_ugurs = st.multiselect(
+        "Bazar ugur saýlaň",
+        options=sorted_industry_ugurs,
+        default=["Ählisi"]
+    )
+
+    # Handle "ALL" selection in Industry Ugur
+    if "Ählisi" in selected_industry_ugurs:
+        selected_industry_ugurs = industry_ugurs[1:]  # Exclude "ALL"
+    if "Ählisi" in selected_university_ugurs:
+        selected_university_ugurs = university_ugurs[1:]  # Exclude "ALL"
 
 
+    # Filter Dataframes
+    filtered_forecasted_grads = forecasted_graduates_by_ugur[
+        forecasted_graduates_by_ugur["Ugur"].isin(selected_university_ugurs)
+    ]
+    filtered_workplace_data = workplace_data[workplace_data["Ugur"].isin(selected_industry_ugurs)]
+    filtered_abroad_grads = abroad_grads[abroad_grads["Ugur"].isin(selected_industry_ugurs)]
+
+    # Combine Data for Unified Chart
+    local_grads = filtered_forecasted_grads.rename(columns={"ÝOM tamamlajaklar": "Count"})
+    local_grads["Category"] = "ÝOM tamamlajaklar"
+
+    workplaces = filtered_workplace_data.rename(columns={"Täze Kabul edilen ÝBI sany": "Count"})
+    workplaces["Category"] = "Täze Kabul edilen ÝBI sany"
+
+    abroad = filtered_abroad_grads.rename(columns={"Daşary ýurdy tamamlap ykrar edilenler": "Count"})
+    abroad["Category"] = "Daşary ýurdy tamamlap ykrar edilenler"
+
+    combined_data = pd.concat([local_grads, workplaces, abroad], ignore_index=True)
+
+    # Visualization: Combined Line Chart
+    st.write("### Täze Kabul edilen ÝBI sany - Daşary ýurdy tamamlap ykrar edilenler - ÝOM tamamlajaklar")
+    fig_combined = px.line(
+        combined_data,
+        x="Year",
+        y="Count",
+        color="Category",
+        line_group="Ugur",
+        title="",
+        labels={"Year": "Ýyl", "Count": "Sany", "Category": "Katigoriýa"},
+        height=600
+    )
+    st.plotly_chart(fig_combined)
 
 
+    st.write("### Ýyl boýunça göterim üýtgemesi")
+    combined_data["Percentage Change"] = combined_data.groupby(["Category", "Ugur"])[
+        "Count"
+    ].pct_change() * 100
 
-# problem ds yurt kop:
-# tolegli kop
-# liivng expenses 
-# decentralization
-# mugt okamak 
-# kuwwatlygyny 
-# 16.4 ahwat last year mekdep grad to uni 
-# welyatalarda acmak
-# quality, ayratyn from bilim
-# grants, 
-# kampuses, 
-# 
+    fig_growth = px.line(
+        combined_data.dropna(subset=["Percentage Change"]),
+        x="Year",
+        y="Percentage Change",
+        color="Category",
+        line_group="Ugur",
+        title="",
+        labels={"Year": "Ýyl", "Percentage Change": "Göterim (%)", "Category": "Kategoriýa"},
+        height=600
+    )
+    st.plotly_chart(fig_growth)
 
-# 36-njy yyla cenli mekdep boyunca 
-# population for 52 year 
-# 
+    # Calculate Growth
+    workplace_growth = workplace_data.sort_values(by=["Ugur", "Year"])  # Sort by Ugur and Year
+    workplace_growth["Growth"] = (
+        workplace_growth.groupby("Ugur")["Täze Kabul edilen ÝBI sany"].pct_change() * 100
+    )  # Calculate percentage growth
 
-# tolegli islegler we bz islegler 
+    # Fill NaN with 0 for the first year of each sector
+    workplace_growth["Growth"] = workplace_growth["Growth"].fillna(0)
 
-# 2024-2025 ahlisi
-
-# her wuzyn ahwaty gecen yyla seredip
-
-
-
-
-
-
-# 18.12.2024
-# 2007 giren 2012 gutarya -> zahmet ucin gerekmish
-# 20120-2024 -> zahmete gelip gowshanlar 
-
-# dasaru yurt + local vs zahmetde gelenler 
-
-# 2:
-# pudak boyunca yom dalde toparlar boyunca, pudak boyunca dasary yurtmy yada localmy??
-
-
-# 3: 
-# zahmet ?
-
-
-# maddy enjamlayyn vs talyp sany -> 5 talyba bir comp we 5 yyldan konelya 
-# proyet 25 eboliup 
-# AR VR > 3 
-# tejribe -? 40% talyp/6 /15/  10 yyldan tazelemek
-#  her 10 yyldan
+    # Visualization: Bar Chart of Growth
+    st.write("### Bazar ugurlar boýunça täze Kabul edilen ÝBI sanynyň ösüşi")
+    fig_top_sectors = px.bar(
+        workplace_growth,
+        x="Ugur",
+        y="Growth",
+        color="Ugur",
+        title="",
+        labels={"Ugur": "Ugur", "Growth": "Ösüş (%)"},
+        height=600,
+        text="Growth"  # Display growth percentage on bars
+    )
+    fig_top_sectors.update_traces(texttemplate='%{text:.2f}%', textposition='outside')  # Format text on bars
+    st.plotly_chart(fig_top_sectors)
 
 
-#  sagat sany = 
+# Calculate Growth
+    graduates_growth = forecasted_graduates_by_ugur.sort_values(by=["Ugur", "Year"])  # Sort by Ugur and Year
+    graduates_growth["Growth"] = (
+        graduates_growth.groupby("Ugur")["ÝOM tamamlajaklar"].pct_change() * 100
+    )  # Calculate percentage growth
+
+    # Fill NaN with 0 for the first year of each sector
+    graduates_growth["Growth"] = graduates_growth["Growth"].fillna(0)
+
+    # Visualization: Bar Chart of Growth
+    st.write("### Uniwersitet ugurlar boýunça ÝOM tamamlajaklaryň ösüşi")
+    fig_top_sectors_graduates = px.bar(
+        graduates_growth,
+        x="Ugur",
+        y="Growth",
+        color="Ugur",
+        title="",
+        labels={"Ugur": "Ugur", "Growth": "Ösüş (%)"},
+        height=600,
+        text="Growth"  # Display growth percentage on bars
+    )
+    fig_top_sectors_graduates.update_traces(texttemplate='%{text:.2f}%', textposition='outside')  # Format text on bars
+    st.plotly_chart(fig_top_sectors_graduates)
 
 
-# almaly tehnik
+    # st.write("### Proportion of Graduates and Newly Created Workplaces by Year")
+    # fig_stacked = px.bar(
+    #     combined_data,
+    #     x="Year",
+    #     y="Count",
+    #     color="Category",
+    #     barmode="stack",
+    #     facet_col="Ugur",
+    #     title="",
+    #     labels={"Year": "Year", "Count": "Count", "Category": "Type"},
+    #     height=800
+    # )
+    # st.plotly_chart(fig_stacked)
 
+    st.write("### Täze Kabul edilen ÝBI sany - Daşary ýurdy tamamlap ykrar edilenler - ÝOM tamamlajaklar göterim paýy")
+    selected_year = st.selectbox("Ýyl saýlaň    ", combined_data["Year"].unique())
+    pie_data = combined_data[combined_data["Year"] == selected_year].groupby("Category")[
+        "Count"
+    ].sum().reset_index()
 
-# shamca 15% kabul edilyan sany wuza bagly dal, oz caklamak, haysy ugurlardan?
+    fig_pie = px.pie(
+        pie_data,
+        names="Category",
+        values="Count",
+        title=f"Göterim paýy - {selected_year}",
+        labels={"Category": "Kategoriýa", "Count": "Sany"},
+        height=600
+    )
+    st.plotly_chart(fig_pie)
 
-
-# hyzmatdaslykda north we souht karta cykarmak, kodlamak bularam 
-
-
-# her pudak pzije indicator 
