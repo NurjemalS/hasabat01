@@ -2090,7 +2090,16 @@ if page == "Kwota":
             st.metric(label="Uçurum 2024:", value= total_graduates_2024['Graduates'])
         with col3:
             st.metric(label="Ahwat:", value=overall_ahwat*100)
-        
+
+        # Slider to select AHwat value between 17 and 75
+        selected_ahwat = st.slider(
+            "Ahwat saýlaň:",
+            min_value=17.0,
+            max_value=75.0,
+            value=float(overall_ahwat * 100),  # Ensure the value is a float
+            step=0.01
+        )
+            
         st.write("### Welaýat ara ahwat")
         st.dataframe(region_ahwat)
 
@@ -2099,7 +2108,7 @@ if page == "Kwota":
         graduates_data.loc[
             (graduates_data['Year'] > 2024) & (graduates_data['Region'] == 'JEMI'),
             'Kwota'
-        ] = graduates_data.loc[graduates_data['Year'] > 2024, 'Graduates'] * 0.17020542993471177
+        ] = graduates_data.loc[graduates_data['Year'] > 2024, 'Graduates'] * (selected_ahwat / 100)
 
         for region in region_ahwat['Welaýat']:
             graduates_data.loc[
