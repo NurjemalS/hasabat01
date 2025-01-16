@@ -3303,3 +3303,4 @@ if page == "Bazar çaklama":
     )
     st.plotly_chart(fig_pie)
 
+ 
